@@ -1,52 +1,85 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fastify = require('fastify')();
 const multipart = require('@fastify/multipart');
 const axios = require('axios');
 
-// Environment variables
-const FORWARD_TO = process.env.FORWARD_TO || 'https://webhook.site/0251787a-9a06-4982-aa42-a964aabea047';
+// Setting Environment variables
+const FORWARD_TO = process.env.FORWARD_TO;
 const PORT = process.env.PORT || 3000;
 
-// Register multipart
-fastify.register(multipart, { addToBody: true });
+if (!FORWARD_TO) {
+  console.error('ERROR: FORWARD_TO environment variable is required');
+  console.error('Make sure FORWARD_TO is set in the .env file in the parent directory');
+  process.exit(1);
+}
 
-// Root route for health check
-fastify.all('/', async (_, reply) => {
-  reply.send(
-    `Content-Type converter service running. Forwarding requests to ${FORWARD_TO}`
-  );
+fastify.register(multipart, { 
+  addToBody: true,
+  onFile: (part) => {
+    console.log('Received file:', part.filename);
+  }
 });
 
-// Handle all other routes
-fastify.all('/:route', async (request, reply) => {
+// Added Logging
+fastify.addHook('preHandler', async (request, reply) => {
+  console.log('\n--- Incoming Request ---');
+  console.log('Method:', request.method);
+  console.log('URL:', request.url);
+  console.log('Headers:', request.headers);
+  console.log('Body:', request.body);
+});
+
+fastify.all('*', async (request, reply) => {
   const verb = request.method.toLowerCase();
-  const route = `/${request.params.route}`;
+  const route = request.url;
+  const targetUrl = `${FORWARD_TO}${route}`;
 
-  console.log(`Incoming ${verb}-request to ${route}`);
-  console.log('Request body:', request.body);
-
+  console.log(`\nForwarding request:`);
+  console.log(`- From: ${request.url}`);
+  console.log(`- To: ${targetUrl}`);
+  console.log(`- Method: ${verb.toUpperCase()}`);
+  
   try {
+    console.log('Sending request to:', targetUrl);
     const proxyResponse = await axios({
       method: verb,
-      url: `${FORWARD_TO}${route}`,
+      url: targetUrl,
       data: request.body,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-forwarded-for': request.headers['x-forwarded-for'],
+        'user-agent': request.headers['user-agent']
       }
     });
 
-    console.log(`Response status: ${proxyResponse.status}`);
-    reply
+    console.log('\nProxy Response:');
+    console.log('Status:', proxyResponse.status);
+    console.log('Headers:', proxyResponse.headers);
+    console.log('Data:', proxyResponse.data);
+
+    return reply
       .code(proxyResponse.status)
       .headers(proxyResponse.headers)
       .send(proxyResponse.data);
   } catch (error) {
-    console.error('Error:', error.message);
-    const status = error.response?.status || 500;
-    const data = error.response?.data || { error: error.message };
+    console.error('\nError forwarding request:');
+    console.error('Message:', error.message);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    }
     
-    reply
+    const status = error.response?.status || 500;
+    const errorResponse = {
+      error: true,
+      message: error.message,
+      details: error.response?.data
+    };
+
+    return reply
       .code(status)
-      .send(data);
+      .send(errorResponse);
   }
 });
 
@@ -54,10 +87,12 @@ fastify.all('/:route', async (request, reply) => {
 const start = async () => {
   try {
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`Forwarding requests to: ${FORWARD_TO}`);
+    console.log(`\nServer Configuration:`);
+    console.log(`- Server running at http://localhost:${PORT}`);
+    console.log(`- Forwarding requests to: ${FORWARD_TO}`);
+    console.log(`- Content-Type conversion: multipart/form-data → application/json`);
   } catch (err) {
-    console.error(err);
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 };
