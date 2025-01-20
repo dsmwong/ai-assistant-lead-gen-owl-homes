@@ -1,5 +1,35 @@
 const Airtable = require('airtable');
 
+// Email parsing function to get most recent reply
+function parseEmailReply(emailData) {
+    // Get the text content, fallback to HTML if no text
+    const text = emailData.text || '';
+    const html = emailData.html || '';
+    
+    // First try to get content from text
+    if (text) {
+        // Split by Gmail reply delimiter
+        const parts = text.split(/On .+wrote:/);
+        // Get first part and clean it
+        let mostRecentReply = parts[0].trim();
+        // Remove any trailing empty lines and '>' quote characters
+        mostRecentReply = mostRecentReply.replace(/^\s*>?\s*|\s+$/gm, '');
+        if (mostRecentReply) {
+            return mostRecentReply;
+        }
+    }
+    
+    // Fallback to HTML content if text parsing yields empty result
+    if (html) {
+        // Get content of first div (most recent reply in Gmail)
+        const firstHtmlPart = html.match(/<div dir="ltr">(.*?)<\/div>/)?.[1] || '';
+        // Remove any HTML tags
+        return firstHtmlPart.replace(/<[^>]+>/g, '').trim();
+    }
+    
+    return ''; // Return empty string if no content found
+}
+
 exports.handler = function(context, event, callback) {
     const response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
@@ -44,11 +74,17 @@ exports.handler = function(context, event, callback) {
             const sessionId = sessionRecord.get('session_id');
             const identity = sessionRecord.get('identity');
 
+            // Parse the most recent reply from the email
+            const mostRecentReply = parseEmailReply({
+                text: event.text,
+                html: event.html
+            });
+
             // Prepare the record for Inbound Emails table
             const emailRecord = {
                 message_id: messageId,
                 session_id: sessionId,
-                message: event.text || event.html || '', // Use text or fallback to HTML
+                message: mostRecentReply || 'Empty message', // Use parsed reply with fallback
                 identity: identity
             };
 
