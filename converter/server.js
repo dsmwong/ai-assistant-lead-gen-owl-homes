@@ -33,7 +33,7 @@ fastify.addHook('preHandler', async (request, reply) => {
 fastify.all('*', async (request, reply) => {
   const verb = request.method.toLowerCase();
   const route = request.url;
-  const targetUrl = `${FORWARD_TO}${route}`;
+  const targetUrl = `${FORWARD_TO}`;
 
   console.log(`\nForwarding request:`);
   console.log(`- From: ${request.url}`);
