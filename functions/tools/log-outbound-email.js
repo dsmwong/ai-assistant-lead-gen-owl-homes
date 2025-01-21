@@ -1,6 +1,6 @@
 // Twilio Function to update Airtable Sessions table
 const Airtable = require('airtable');
-const axios = require('axios'); // We'll need axios for making the HTTP request
+const axios = require('axios');
 
 // Helper function to send email event
 async function sendEmailEvent(domain, emailData) {

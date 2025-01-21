@@ -17,5 +17,5 @@ module.exports = (domain) => ({
       outbound_email_status: string, //set it to "Sent" if the grade is above 0.85, set it to "Draft" if its not
       recommended_email_body: string //if you set the status to draft, provided the recommend email body
     },
-  }
+  },
 });

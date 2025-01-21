@@ -29,7 +29,7 @@ exports.handler = async function(context, event, callback) {
             messageConfig = {
                 identity: `email:${event.email}`,
                 body: event.response,
-                webhook: `https://${context.FUNCTIONS_DOMAIN}/log-sessions`,
+                webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
                 session_id: cleanSessionId,
                 mode: "email"
             };
@@ -40,7 +40,7 @@ exports.handler = async function(context, event, callback) {
             messageConfig = {
                 identity: `email:${event.email}`,
                 body: messageBody,
-                webhook: `https://${context.FUNCTIONS_DOMAIN}/log-sessions`,
+                webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
                 mode: "email"
             };
         }

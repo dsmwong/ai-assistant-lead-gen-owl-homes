@@ -3,8 +3,7 @@ const Airtable = require('airtable');
 exports.handler = function(context, event, callback) {
     const response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
-
-    // Wrap async operations in a Promise
+    
     (async () => {
         try {
             // Validate Airtable configuration
@@ -76,6 +75,23 @@ exports.handler = function(context, event, callback) {
                 });
                 return callback(null, response);
             }
+
+            // Fire and forget request to assistant endpoint
+            const assistantPayload = {
+                email: event.email,
+                first_name: event.first_name,
+                area_code: event.area_code
+            };
+
+            fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(assistantPayload)
+            }).catch(error => {
+                console.error('Error sending to assistant:', error);
+            });
             
             // Return success response with the auto-generated id field
             response.setStatusCode(200);

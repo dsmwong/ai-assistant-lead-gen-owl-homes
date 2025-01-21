@@ -1,7 +1,9 @@
 const Airtable = require('airtable');
 
 exports.handler = async function(context, event, callback) {
-  // Initialize Airtable
+  // Initialize Twilio and Airtable clients
+  const twilio = require('twilio');
+  const client = twilio(context.TWILIO_ACCOUNT_SID, context.TWILIO_AUTH_TOKEN);
   const base = new Airtable({apiKey: context.AIRTABLE_API_KEY})
     .base(context.AIRTABLE_BASE_ID);
   
@@ -42,13 +44,44 @@ exports.handler = async function(context, event, callback) {
         created_at: sessionData.updated_at
       });
     }
+
+    // Create message configuration for AI Assistant Sales Manager
+    const messageConfig = {
+      identity: sessionData.identity,
+      body: `Please use the "Outbound Email Grader" tool for the following email body: ${sessionData.last_message}`,
+      mode: "email"
+    };
+
+    // Send message to AI Assistant
+    const assistantMessage = await client.assistants.v1
+      .assistants(context.ASSISTANT_ID_MANAGER)
+      .messages
+      .create(messageConfig);
     
+    // Return combined response
     callback(null, {
       status: 'success',
-      data: response
+      session_data: response,
+      assistant_response: {
+        message_status: assistantMessage.status,
+        session_id: assistantMessage.session_id,
+        account_sid: assistantMessage.account_sid,
+        body: assistantMessage.body,
+        flagged: assistantMessage.flagged,
+        aborted: assistantMessage.aborted
+      }
     });
     
   } catch (error) {
-    callback(error);
+    // Return detailed error response
+    callback(error, {
+      status: 'error',
+      message: error.message,
+      details: {
+        code: error.code,
+        status: error.status,
+        more_info: error.more_info
+      }
+    });
   }
 };

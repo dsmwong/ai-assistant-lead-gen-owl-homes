@@ -12,66 +12,18 @@ module.exports = (domain) => ({
     method: 'GET',
     url: `https://${domain}/tools/customer-lookup`,
   },
-  orderLookup: {
-    name: 'Order Look Up',
+  getListings: {
+    name: 'Get Listings',
     description:
-      'Use this tool to look up the customers order. ALWAYS ask the user to confirm the last four characters of their order number to ensure you are referencing the correct one.',
+      'Use this tool to search for listings on behalf of users. Ensure you include these listings as recommendations or to answer questions on behalf of the end user. \n You are only required to fill out one of the below fields. Do not make any information up or you will be fired.',
     type: 'WEBHOOK',
     method: 'GET',
-    url: `https://${domain}/tools/order-lookup`,
-    schema: {
-      order_confirmation_digits: 'string', //the last four characters of the order number
-    },
-  },
-  returnOrder: {
-    name: 'Return Order',
-    description:
-      'Use this tool to return a customers order using the order id. Only use this tool if the order status is "delivered".',
-    type: 'WEBHOOK',
-    method: 'POST',
-    url: `https://${domain}/tools/return-order`,
-    schema: {
-      order_id: 'string', //the order id to return
-      return_reason: 'string', //why the customer is returning the order
-    },
-  },
-  customerSurvey: {
-    name: 'Customer Survey',
-    description:
-      'Use this tool when you have conducted the customer survey after you have handled all the users questions and requests. ALWAYS use this tool before ending the conversation.',
-    type: 'WEBHOOK',
-    method: 'POST',
-    url: `https://${domain}/tools/create-survey`,
-    schema: {
-      rating: 'number', //the rating the user gave 1-5
-      feedback: 'string', //the feedback the user gave
-    },
-  },
-  productInventory: {
-    name: 'Product Inventory',
-    description:
-      'Use this tool to provide product recommendations to the user.',
-    type: 'WEBHOOK',
-    method: 'GET',
-    url: `https://${domain}/tools/products`,
-  },
-  sendToFelx: {
-    name: 'Send to Flex',
-    description:
-      'Use this tool when the user wants to speak with a supervisor or when you are not able to fulfill their request. ALWAYS tell the user you are transferring them to a Supervisor before using this tool.',
-    type: 'WEBHOOK',
-    method: 'GET',
-    url: `https://${domain}/tools/send-to-flex`,
-  },
-  placeOrder: {
-    name: 'Place Order',
-    description:
-      "User this tool to place an order, ALWAYS confirm with user if you'd like to place the order using the same billing and shipping information as their last order.",
-    type: 'WEBHOOK',
-    method: 'POST',
-    url: `https://${domain}/tools/place-order`,
-    schema: {
-      product_id: 'string', //the product id to order
+    url: `https://${domain}/tools/get-listings`,
+    schema: { 
+      city?: 'string', //the city the user is interested in
+      zip_code?: 'string', //the zip code the user is interested in
+      state?: 'string', //the state the user is interested in
+      price?: 'number' //the maximum about the user will pay
     },
   },
 });
