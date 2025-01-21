@@ -48,19 +48,19 @@ exports.handler = async function(context, event, callback) {
         const identity = event.to; // Keep original identity format (email:user@example.com)
         const recipientEmail = event.to.replace('email:', '');
         
-        // Look up the last message ID from Sessions table
+        // Look up the last message ID from Inbound Emails table
         let lastMessageId = null;
         try {
-            const records = await base('Sessions')
+            const records = await base('Inbound Emails')
                 .select({
                     filterByFormula: `{identity} = '${identity}'`,
                     maxRecords: 1,
-                    fields: ['last_message_id']
+                    fields: ['message_id']
                 })
                 .firstPage();
 
-            if (records.length > 0 && records[0].fields.last_message_id) {
-                lastMessageId = records[0].fields.last_message_id;
+            if (records.length > 0 && records[0].fields.message_id) {
+                lastMessageId = records[0].fields.message_id;
             }
         } catch (airtableError) {
             console.error('Airtable lookup error:', airtableError);
@@ -93,8 +93,8 @@ exports.handler = async function(context, event, callback) {
 
             msg.headers = {
                 ...msg.headers,
-                'In-Reply-To': lastMessageId,
-                'References': lastMessageId
+                'In-Reply-To': `<${lastMessageId}>`,
+                'References': `<${lastMessageId}>`
             };
         }
 
