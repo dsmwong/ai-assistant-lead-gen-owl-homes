@@ -1,5 +1,4 @@
 const sgMail = require('@sendgrid/mail');
-const { v4: uuidv4 } = require('uuid');
 const Airtable = require('airtable');
 
 /**
@@ -68,7 +67,7 @@ exports.handler = async function(context, event, callback) {
         const msg = {
             to: recipientEmail,
             from: context.SENDER_EMAIL,
-            subject: event.subject || 'New Message',
+            subject: event.subject || 'Exciting New Homes, Just for You',
             text: event.body,
             html: `<div>${event.body}</div>`
         };
