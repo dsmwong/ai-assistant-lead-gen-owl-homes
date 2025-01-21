@@ -17,12 +17,6 @@ const Airtable = require('airtable');
  *   "body": "Email content", // The email body content
  *   "subject": "Subject line", // Optional - defaults to "New Message"
  * }
- * 
- * Airtable Requirements:
- * - Table: 'Sessions'
- * - Columns:
- *   - identity: string (format: "email:user@example.com")
- *   - last_message_id: string (stores the Message-ID for threading)
  */
 exports.handler = async function(context, event, callback) {
     const response = new Twilio.Response();
@@ -70,19 +64,13 @@ exports.handler = async function(context, event, callback) {
         // Initialize SendGrid
         sgMail.setApiKey(context.SENDGRID_API_KEY);
 
-        // Generate a new Message-ID with identity format
-        const newMessageId = `<${identity}/${uuidv4()}>`;
-
         // Construct email message
         const msg = {
             to: recipientEmail,
             from: context.SENDER_EMAIL,
             subject: event.subject || 'New Message',
             text: event.body,
-            html: `<div>${event.body}</div>`,
-            headers: {
-                'Message-ID': newMessageId
-            }
+            html: `<div>${event.body}</div>`
         };
 
         // If we found a last message ID, add threading headers
@@ -101,34 +89,11 @@ exports.handler = async function(context, event, callback) {
         // Send email
         await sgMail.send(msg);
 
-        // Update the Sessions table with the new message ID
-        try {
-            const records = await base('Sessions')
-                .select({
-                    filterByFormula: `{identity} = '${identity}'`,
-                    maxRecords: 1
-                })
-                .firstPage();
-
-            if (records.length > 0) {
-                await base('Sessions').update([{
-                    id: records[0].id,
-                    fields: {
-                        last_message_id: newMessageId
-                    }
-                }]);
-            }
-        } catch (updateError) {
-            console.error('Error updating Airtable:', updateError);
-            // Continue even if update fails
-        }
-
         // Return success response
         response.setStatusCode(200);
         response.setBody({
             success: true,
-            message: 'Email sent successfully',
-            messageId: newMessageId
+            message: 'Email sent successfully'
         });
 
         callback(null, response);
