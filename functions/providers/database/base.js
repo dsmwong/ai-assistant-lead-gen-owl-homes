@@ -33,16 +33,3 @@ class BaseDatabase {
   }
   
   module.exports = BaseDatabase;
-  
-  // functions/providers/email/base.js
-  class BaseEmailProvider {
-    async send(to, body, subject, options = {}) {
-      throw new Error('Must implement send');
-    }
-    
-    async parseInbound(payload) {
-      throw new Error('Must implement parseInbound');
-    }
-  }
-  
-  module.exports = BaseEmailProvider;
