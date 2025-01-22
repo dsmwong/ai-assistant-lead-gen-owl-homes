@@ -1,10 +1,7 @@
-// functions/providers/database/airtable.js
 const Airtable = require('airtable');
-const BaseDatabase = require('./base');
 
-class AirtableProvider extends BaseDatabase {
+class AirtableProvider {
   constructor(apiKey, baseId) {
-    super();
     if (!apiKey || !baseId) {
       throw new Error('Airtable API key and base ID are required');
     }

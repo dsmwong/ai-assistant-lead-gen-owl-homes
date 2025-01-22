@@ -1,7 +1,6 @@
 const sgMail = require('@sendgrid/mail');
-const BaseEmailProvider = require('./base');
 
-class SendGridProvider extends BaseEmailProvider {
+class SendGridProvider {
   constructor(apiKey, senderEmail) {
     super();
     if (!apiKey || !senderEmail) {

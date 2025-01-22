@@ -1,8 +1,9 @@
-const { validateEmail, validatePhone, validateRequiredFields } = require('../utils/validation');
-const { createResponse, success, error } = require('../utils/response');
-const ProviderFactory = require('../providers/factory');
-
 exports.handler = function(context, event, callback) {
+    // Get all utility functions and providers
+    const { validateEmail, validatePhone, validateRequiredFields } = require(Runtime.getAssets()['/utils/validation.js'].path);
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+    
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     
@@ -58,7 +59,7 @@ exports.handler = function(context, event, callback) {
                 area_code: event.area_code
             };
 
-            fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
+            fetch(`https://${context.DOMAIN_NAME}/backend/send-to-assistant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(assistantPayload)
