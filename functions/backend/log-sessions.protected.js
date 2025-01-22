@@ -1,8 +1,9 @@
-const { createResponse, success, error } = require('../utils/response');
-const { validateSessionId } = require('../utils/validation');
-const ProviderFactory = require('../providers/factory');
-
 exports.handler = async function(context, event, callback) {
+
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const { validateSessionId } = require(Runtime.getAssets()['/utils/validation.js'].path);
+
     try {
         // Initialize Twilio client and providers
         const twilio = require('twilio');

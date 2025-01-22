@@ -1,7 +1,7 @@
-const { createResponse, success, error } = require('../utils/response');
-const ProviderFactory = require('../providers/factory');
-
 exports.handler = async function(context, event, callback) {
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);

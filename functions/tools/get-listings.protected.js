@@ -1,8 +1,9 @@
-const { createResponse, success, error, paginatedResponse } = require('../utils/response');
-const { validateZipCode, validateState, validatePrice } = require('../utils/validation');
-const ProviderFactory = require('../providers/factory');
-
 exports.handler = async function(context, event, callback) {
+    
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const { validateZipCode, validateState, validatePrice } = require(Runtime.getAssets()['/utils/validation.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+
     // Initialize database provider
     const db = ProviderFactory.getDatabase(context);
 

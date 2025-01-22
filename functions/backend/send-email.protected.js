@@ -1,8 +1,3 @@
-const { createResponse, success, error } = require('../utils/response');
-const { validateEmail } = require('../utils/validation');
-const { formatReplySubject } = require('../utils/email');
-const ProviderFactory = require('../providers/factory');
-
 /**
  * Twilio Function to send emails with threading support
  * 
@@ -20,6 +15,12 @@ const ProviderFactory = require('../providers/factory');
  * }
  */
 exports.handler = async function(context, event, callback) {
+
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const { validateEmail } = require(Runtime.getAssets()['/utils/validation.js'].path);
+    const { formatReplySubject } = require(Runtime.getAssets()['/utils/email.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);

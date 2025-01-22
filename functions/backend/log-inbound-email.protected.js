@@ -1,8 +1,9 @@
-const { createResponse, success, error } = require('../utils/response');
-const { parseEmailReply } = require('../utils/email');
-const ProviderFactory = require('../providers/factory');
-
 exports.handler = function(context, event, callback) {
+
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const { parseEmailReply } = require(Runtime.getAssets()['/utils/email.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+    
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);

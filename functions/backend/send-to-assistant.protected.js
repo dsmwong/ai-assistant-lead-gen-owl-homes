@@ -1,7 +1,3 @@
-const { createResponse, success, error } = require('../utils/response');
-const { validateEmail } = require('../utils/validation');
-const ProviderFactory = require('../providers/factory');
-
 /**
  * Handles sending messages to the AI Assistant with session management
  * 
@@ -10,6 +6,11 @@ const ProviderFactory = require('../providers/factory');
  * @param {Function} callback - Callback function
  */
 exports.handler = async function(context, event, callback) {
+    // Get all utility functions and providers
+    const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+    const { validateEmail } = require(Runtime.getAssets()['/utils/validation.js'].path);
+    const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     
