@@ -1,82 +1,57 @@
-const Airtable = require('airtable');
+const { validateEmail, validatePhone, validateRequiredFields } = require('../utils/validation');
+const { createResponse, success, error } = require('../utils/response');
+const ProviderFactory = require('../providers/factory');
 
 exports.handler = function(context, event, callback) {
-    const response = new Twilio.Response();
-    response.appendHeader('Content-Type', 'application/json');
+    // Initialize providers
+    const db = ProviderFactory.getDatabase(context);
     
     (async () => {
         try {
-            // Validate Airtable configuration
-            if (!context.AIRTABLE_API_KEY || !context.AIRTABLE_BASE_ID) {
-                response.setStatusCode(500);
-                response.setBody({ 
-                    success: false,
-                    error: 'Airtable configuration error. Please check environment variables.' 
-                });
-                return callback(null, response);
+            // Check for missing configuration
+            const missingConfig = ProviderFactory.validateConfig(context);
+            if (missingConfig) {
+                throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
             }
 
-            const base = new Airtable({apiKey: context.AIRTABLE_API_KEY}).base(context.AIRTABLE_BASE_ID);
-            
             // Validate required fields
             const requiredFields = ['first_name', 'last_name', 'email', 'phone', 'area_code'];
-            const missingFields = requiredFields.filter(field => !event[field]);
+            const missingFields = validateRequiredFields(event, requiredFields);
             
-            if (missingFields.length > 0) {
-                response.setStatusCode(400);
-                response.setBody({
-                    success: false,
-                    error: `Missing required fields: ${missingFields.join(', ')}`
-                });
-                return callback(null, response);
+            if (missingFields) {
+                return callback(null, createResponse(400, error(
+                    `Missing required fields: ${missingFields.join(', ')}`,
+                    400
+                )));
             }
             
             // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(event.email)) {
-                response.setStatusCode(400);
-                response.setBody({
-                    success: false,
-                    error: 'Invalid email format'
-                });
-                return callback(null, response);
+            if (!validateEmail(event.email)) {
+                return callback(null, createResponse(400, error(
+                    'Invalid email format',
+                    400
+                )));
             }
             
-            // Validate phone number format (E.164 format)
-            const phoneRegex = /^\+[1-9]\d{10,14}$/;
-            if (!phoneRegex.test(event.phone)) {
-                response.setStatusCode(400);
-                response.setBody({
-                    success: false,
-                    error: 'Invalid phone number format. Must be in E.164 format'
-                });
-                return callback(null, response);
+            // Validate phone number format
+            if (!validatePhone(event.phone)) {
+                return callback(null, createResponse(400, error(
+                    'Invalid phone number format. Must be in E.164 format',
+                    400
+                )));
             }
             
-            // Create new lead record
-            const newLead = await base('Leads').create([
-                {
-                    fields: {
-                        'first_name': event.first_name,
-                        'last_name': event.last_name,
-                        'email': event.email,
-                        'phone': event.phone,
-                        'area_code': event.area_code,
-                        'status': 'New'
-                    }
-                }
-            ]);
+            // Create lead using database provider
+            const leadId = await db.createLead({
+                first_name: event.first_name,
+                last_name: event.last_name,
+                email: event.email,
+                phone: event.phone,
+                area_code: event.area_code,
+                status: 'New'
+            });
 
-            if (!newLead || newLead.length === 0) {
-                response.setStatusCode(500);
-                response.setBody({ 
-                    success: false,
-                    error: 'Failed to create lead record' 
-                });
-                return callback(null, response);
-            }
-
-            // Fire and forget request to assistant endpoint
+            // Send to AI Assistant (fire and forget)
             const assistantPayload = {
                 email: event.email,
                 first_name: event.first_name,
@@ -85,42 +60,26 @@ exports.handler = function(context, event, callback) {
 
             fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(assistantPayload)
             }).catch(error => {
                 console.error('Error sending to assistant:', error);
             });
             
-            // Return success response with the auto-generated id field
-            response.setStatusCode(200);
-            response.setBody({
-                success: true,
+            // Return success response
+            return callback(null, createResponse(200, success({
                 message: 'Lead created successfully',
-                id: newLead[0].fields.id
-            });
+                id: leadId
+            })));
             
-            return callback(null, response);
+        } catch (err) {
+            console.error('Error processing form submission:', err);
             
-        } catch (error) {
-            console.error('Error:', error);
-            
-            response.setStatusCode(500);
-            response.setBody({
-                success: false,
-                error: 'Internal server error'
-            });
-            
-            return callback(null, response);
+            return callback(null, createResponse(500, error(
+                'Internal server error processing form submission',
+                500,
+                process.env.NODE_ENV === 'development' ? err.stack : undefined
+            )));
         }
-    })().catch(err => {
-        console.error('Unhandled Promise Rejection:', err);
-        response.setStatusCode(500);
-        response.setBody({
-            success: false,
-            error: 'Internal server error'
-        });
-        return callback(null, response);
-    });
+    })();
 };

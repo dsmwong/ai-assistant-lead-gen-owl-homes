@@ -1,109 +1,93 @@
-const sgMail = require('@sendgrid/mail');
-const Airtable = require('airtable');
+const { createResponse, success, error } = require('../utils/response');
+const { validateEmail } = require('../utils/validation');
+const { formatReplySubject } = require('../utils/email');
+const ProviderFactory = require('../providers/factory');
 
 /**
- * Twilio Function to send emails via SendGrid with threading support
+ * Twilio Function to send emails with threading support
  * 
  * Required Environment Variables:
- * - SENDGRID_API_KEY: Your SendGrid API key
- * - SENDER_EMAIL: Your verified sender email address in SendGrid
- * - AIRTABLE_API_KEY: Your Airtable API key
- * - AIRTABLE_BASE_ID: Your Airtable base ID
+ * - SENDGRID_API_KEY: SendGrid API key
+ * - SENDER_EMAIL: Verified sender email
+ * - AIRTABLE_API_KEY: Airtable API key
+ * - AIRTABLE_BASE_ID: Airtable base ID
  * 
  * Expected Event Payload:
  * {
- *   "to": "email:recipient@example.com", // The recipient's email with 'email:' prefix
- *   "body": "Email content", // The email body content
- *   "subject": "Subject line", // Optional - defaults to "New Message"
+ *   "to": "email:recipient@example.com", // Recipient email with 'email:' prefix
+ *   "body": "Email content", // Email body
+ *   "subject": "Subject line" // Optional - defaults to "Exciting New Homes, Just for You"
  * }
  */
 exports.handler = async function(context, event, callback) {
-    const response = new Twilio.Response();
-    response.appendHeader('Content-Type', 'application/json');
+    // Initialize providers
+    const db = ProviderFactory.getDatabase(context);
+    const emailProvider = ProviderFactory.getEmailProvider(context);
     
     try {
-        // Validate required environment variables
-        if (!context.SENDGRID_API_KEY || !context.SENDER_EMAIL || 
-            !context.AIRTABLE_API_KEY || !context.AIRTABLE_BASE_ID) {
-            throw new Error('Missing required environment variables');
+        // Validate configuration
+        const missingConfig = ProviderFactory.validateConfig(context);
+        if (missingConfig) {
+            throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
         }
 
-        // Validate required event parameters
+        // Validate required parameters
         if (!event.to || !event.body) {
-            throw new Error('Missing required parameters');
+            throw new Error('Missing required parameters: to and body are required');
         }
 
-        // Initialize Airtable
-        const base = new Airtable({apiKey: context.AIRTABLE_API_KEY})
-                    .base(context.AIRTABLE_BASE_ID);
-
-        // Format the email address and get identity
-        const identity = event.to; // Keep original identity format (email:user@example.com)
+        // Extract and validate email
         const recipientEmail = event.to.replace('email:', '');
-        
-        // Look up the last message ID from Inbound Emails table
-        let lastMessageId = null;
+        if (!validateEmail(recipientEmail)) {
+            throw new Error('Invalid email format');
+        }
+
+        // Look up the most recent inbound email for threading
+        let threadOptions = {};
         try {
-            const records = await base('Inbound Emails')
-                .select({
-                    filterByFormula: `{identity} = '${identity}'`,
-                    maxRecords: 1,
-                    fields: ['message_id']
-                })
-                .firstPage();
-
-            if (records.length > 0 && records[0].fields.message_id) {
-                lastMessageId = records[0].fields.message_id;
+            const inboundEmails = await db.getInboundEmails(event.to, 1);
+            if (inboundEmails && inboundEmails.length > 0) {
+                const messageId = inboundEmails[0].get('message_id');
+                if (messageId) {
+                    threadOptions = {
+                        lastMessageId: messageId,
+                        subject: formatReplySubject(event.subject)
+                    };
+                }
             }
-        } catch (airtableError) {
-            console.error('Airtable lookup error:', airtableError);
-            // Continue without lastMessageId if lookup fails
+        } catch (lookupError) {
+            console.warn('Error looking up thread history:', lookupError);
+            // Continue without threading if lookup fails
         }
 
-        // Initialize SendGrid
-        sgMail.setApiKey(context.SENDGRID_API_KEY);
-
-        // Construct email message
-        const msg = {
-            to: recipientEmail,
-            from: context.SENDER_EMAIL,
-            subject: event.subject || 'Exciting New Homes, Just for You',
-            text: event.body,
-            html: `<div>${event.body}</div>`
-        };
-
-        // If we found a last message ID, add threading headers
-        if (lastMessageId) {
-            if (!msg.subject.toLowerCase().startsWith('re:')) {
-                msg.subject = `Re: ${msg.subject}`;
-            }
-
-            msg.headers = {
-                ...msg.headers,
-                'In-Reply-To': `<${lastMessageId}>`,
-                'References': `<${lastMessageId}>`
-            };
-        }
-
-        // Send email
-        await sgMail.send(msg);
+        // Send email using provider
+        const sendResult = await emailProvider.send(
+            event.to,
+            event.body,
+            threadOptions.subject || event.subject,
+            threadOptions
+        );
 
         // Return success response
-        response.setStatusCode(200);
-        response.setBody({
-            success: true,
-            message: 'Email sent successfully'
-        });
+        return callback(null, createResponse(200, success({
+            message: 'Email sent successfully',
+            messageId: sendResult.messageId
+        })));
 
-        callback(null, response);
-    } catch (error) {
-        console.error('Error sending email:', error);
-        response.setStatusCode(400);
-        response.setBody({
-            success: false,
-            error: error.message
-        });
+    } catch (err) {
+        console.error('Error sending email:', err);
 
-        callback(error, response);
+        // Determine appropriate status code
+        const statusCode = err.message.includes('Missing required') || 
+                          err.message.includes('Invalid email') ? 400 : 500;
+
+        return callback(null, createResponse(statusCode, error(
+            err.message,
+            statusCode,
+            process.env.NODE_ENV === 'development' ? {
+                stack: err.stack,
+                details: err.response?.data
+            } : undefined
+        )));
     }
 };

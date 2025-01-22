@@ -1,48 +1,58 @@
-const Airtable = require('airtable');
+const { createResponse, success, error, paginatedResponse } = require('../utils/response');
+const { validateZipCode, validateState, validatePrice } = require('../utils/validation');
+const ProviderFactory = require('../providers/factory');
 
 exports.handler = async function(context, event, callback) {
-    // Initialize response object
-    const response = new Twilio.Response();
-    response.appendHeader('Content-Type', 'application/json');
+    // Initialize database provider
+    const db = ProviderFactory.getDatabase(context);
 
     try {
-        // Initialize Airtable
-        const base = new Airtable({apiKey: context.AIRTABLE_API_KEY})
-            .base(context.AIRTABLE_BASE_ID);
+        // Validate configuration
+        const missingConfig = ProviderFactory.validateConfig(context);
+        if (missingConfig) {
+            throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
+        }
 
-        // Extract filter criteria from the event body
+        // Extract and validate filter criteria
         const { city, state, zip_code, price } = event;
+        const validationErrors = {};
 
-        // Build filter formula
+        if (state && !validateState(state)) {
+            validationErrors.state = 'Invalid state code format';
+        }
+
+        if (zip_code && !validateZipCode(zip_code)) {
+            validationErrors.zip_code = 'Invalid zip code format';
+        }
+
+        if (price && !validatePrice(price)) {
+            validationErrors.price = 'Invalid price value';
+        }
+
+        if (Object.keys(validationErrors).length > 0) {
+            return callback(null, createResponse(400, error(
+                'Validation failed',
+                400,
+                validationErrors
+            )));
+        }
+
+        // Build filter conditions
         let filterConditions = [];
         
-        if (city) {
-            filterConditions.push(`{city} = '${city}'`);
-        }
-        
-        if (state) {
-            filterConditions.push(`{state} = '${state}'`);
-        }
-        
-        if (zip_code) {
-            filterConditions.push(`{zip_code} = '${zip_code}'`);
-        }
-        
-        if (price) {
-            filterConditions.push(`{price} <= ${parseFloat(price)}`);
-        }
-
-        // Combine conditions with AND operator
-        const filterFormula = filterConditions.length > 0 
-            ? `AND(${filterConditions.join(', ')})`
-            : '';
+        if (city) filterConditions.push(`{city} = '${city}'`);
+        if (state) filterConditions.push(`{state} = '${state.toUpperCase()}'`);
+        if (zip_code) filterConditions.push(`{zip_code} = '${zip_code}'`);
+        if (price) filterConditions.push(`{price} <= ${parseFloat(price)}`);
 
         // Query Airtable
         const records = await new Promise((resolve, reject) => {
             let allRecords = [];
             
-            base('Listings').select({
-                filterByFormula: filterFormula
+            db.base('Listings').select({
+                filterByFormula: filterConditions.length > 0 
+                    ? `AND(${filterConditions.join(', ')})`
+                    : ''
             }).eachPage(
                 function page(records, fetchNextPage) {
                     records.forEach(record => {
@@ -73,25 +83,24 @@ exports.handler = async function(context, event, callback) {
             );
         });
 
-        // Set success response
-        response.setStatusCode(200);
-        response.setBody({
-            success: true,
-            count: records.length,
-            listings: records
-        });
+        // Return paginated response
+        return callback(null, createResponse(200, paginatedResponse(
+            records,
+            {
+                page: 1,
+                pageSize: records.length,
+                total: records.length,
+                hasMore: false
+            }
+        )));
 
-        callback(null, response);
-
-    } catch (error) {
-        console.error('Error:', error);
-        response.setStatusCode(500);
-        response.setBody({
-            success: false,
-            error: 'Internal server error',
-            message: error.message
-        });
+    } catch (err) {
+        console.error('Error fetching listings:', err);
         
-        callback(null, response);
+        return callback(null, createResponse(500, error(
+            'Error fetching listings',
+            500,
+            process.env.NODE_ENV === 'development' ? err.stack : undefined
+        )));
     }
 };

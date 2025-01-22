@@ -1,45 +1,66 @@
+const { createResponse, success, error } = require('../utils/response');
+const { validateEmail } = require('../utils/validation');
+const ProviderFactory = require('../providers/factory');
+
+/**
+ * Handles sending messages to the AI Assistant with session management
+ * 
+ * @param {Object} context - Twilio Function context
+ * @param {Object} event - Request payload
+ * @param {Function} callback - Callback function
+ */
 exports.handler = async function(context, event, callback) {
+    // Initialize providers
+    const db = ProviderFactory.getDatabase(context);
+    
     try {
-        // Initialize Twilio and Airtable clients
+        // Initialize Twilio client
         const twilio = require('twilio');
         const client = twilio(context.TWILIO_ACCOUNT_SID, context.TWILIO_AUTH_TOKEN);
-        const Airtable = require('airtable');
-        const base = new Airtable({apiKey: context.AIRTABLE_API_KEY}).base(context.AIRTABLE_BASE_ID);
 
-        // Validate incoming payload
-        if (!event.email) {
-            throw new Error('Missing required fields: email');
+        // Validate configuration
+        const missingConfig = ProviderFactory.validateConfig(context);
+        if (missingConfig) {
+            throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
         }
 
-        // Check for existing identity in Airtable Sessions table
-        const existingSession = await base('Sessions')
-            .select({
-                filterByFormula: `{identity} = 'email:${event.email}'`,
-                maxRecords: 1
-            })
-            .firstPage();
+        // Validate required fields
+        if (!event.email) {
+            throw new Error('Missing required field: email');
+        }
 
-        // Prepare message configuration based on existing session
+        if (!validateEmail(event.email)) {
+            throw new Error('Invalid email format');
+        }
+
+        // Prepare identity
+        const identity = `email:${event.email}`;
+
+        // Check for existing session
+        const existingSession = await db.getSession(identity);
+
+        // Prepare message configuration
         let messageConfig;
-        if (existingSession && existingSession.length > 0) {
-            // Use existing session
-            const rawSessionId = existingSession[0].fields.session_id;
-            const cleanSessionId = rawSessionId.replace('webhook:', '');
+        if (existingSession) {
+            // Clean up session ID if needed
+            const sessionId = existingSession.get('session_id').replace('webhook:', '');
 
             messageConfig = {
-                identity: `email:${event.email}`,
+                identity: identity,
                 body: event.response,
                 webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
-                session_id: cleanSessionId,
+                session_id: sessionId,
                 mode: "email"
             };
         } else {
-            // Create new session with full message body
-            const messageBody = `A new lead, named ${event.first_name}, was submitted and they are interested in properties in ${event.area_code}. Write an email to them with some property recommendations and ask if they are interested in scheduling time with a Owl Home Agent.`;
-            
+            // Create new session with initial message
+            if (!event.first_name || !event.area_code) {
+                throw new Error('Missing required fields for new lead: first_name and area_code');
+            }
+
             messageConfig = {
-                identity: `email:${event.email}`,
-                body: messageBody,
+                identity: identity,
+                body: `A new lead, named ${event.first_name}, was submitted and they are interested in properties in ${event.area_code}. Write an email to them with some property recommendations and ask if they are interested in scheduling time with a Owl Home Agent.`,
                 webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
                 mode: "email"
             };
@@ -51,31 +72,34 @@ exports.handler = async function(context, event, callback) {
             .messages
             .create(messageConfig);
 
-        // Prepare success response
-        const response = {
-            success: true,
+        // Return success response
+        return callback(null, createResponse(200, success({
             message_status: message.status,
             session_id: message.session_id,
             account_sid: message.account_sid,
             body: message.body,
             flagged: message.flagged,
-            aborted: message.aborted,
-            error: null
-        };
+            aborted: message.aborted
+        })));
 
-        // Return success response
-        return callback(null, response);
+    } catch (err) {
+        console.error('Error sending to assistant:', err);
 
-    } catch (error) {
-        // Handle errors
-        const errorResponse = {
-            success: false,
-            message_status: 'failed',
-            error: error.message,
-            aborted: true,
-            flagged: false
-        };
-        
-        return callback(error, errorResponse);
+        // Determine appropriate status code
+        const statusCode = err.message.includes('Missing required') || 
+                          err.message.includes('Invalid email') ? 400 : 500;
+
+        return callback(null, createResponse(statusCode, error(
+            err.message,
+            statusCode,
+            process.env.NODE_ENV === 'development' ? {
+                stack: err.stack,
+                details: err.code ? {
+                    code: err.code,
+                    status: err.status,
+                    more_info: err.more_info
+                } : undefined
+            } : undefined
+        )));
     }
 };
