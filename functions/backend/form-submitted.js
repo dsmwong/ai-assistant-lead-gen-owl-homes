@@ -59,7 +59,7 @@ exports.handler = function(context, event, callback) {
                 area_code: event.area_code
             };
 
-            fetch(`https://${context.DOMAIN_NAME}/backend/send-to-assistant`, {
+            fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(assistantPayload)
