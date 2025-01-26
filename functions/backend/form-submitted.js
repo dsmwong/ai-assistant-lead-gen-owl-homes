@@ -1,10 +1,8 @@
 exports.handler = function(context, event, callback) {
-    // Get all utility functions and providers
     const { validateEmail, validatePhone, validateRequiredFields } = require(Runtime.getAssets()['/utils/validation.js'].path);
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
     
-    // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     
     (async () => {
@@ -52,20 +50,37 @@ exports.handler = function(context, event, callback) {
                 status: 'New'
             });
 
-            // Send to AI Assistant (fire and forget)
+            console.log('Lead created successfully:', leadId);
+
+            // Prepare assistant payload
             const assistantPayload = {
                 email: event.email,
                 first_name: event.first_name,
                 area_code: event.area_code
             };
 
-            fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(assistantPayload)
-            }).catch(error => {
-                console.error('Error sending to assistant:', error);
-            });
+            console.log('Attempting to send to assistant:', assistantPayload);
+
+            // Modified fetch call with better error handling
+            try {
+                const assistantResponse = await fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(assistantPayload)
+                });
+
+                const responseData = await assistantResponse.json();
+                console.log('Assistant response:', responseData);
+
+                if (!assistantResponse.ok) {
+                    throw new Error(`Assistant request failed: ${responseData.error || 'Unknown error'}`);
+                }
+            } catch (fetchError) {
+                console.error('Error sending to assistant:', fetchError);
+                // We don't throw here because we still want to return success for the lead creation
+            }
             
             // Return success response
             return callback(null, createResponse(200, success({

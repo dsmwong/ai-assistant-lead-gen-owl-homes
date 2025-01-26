@@ -7,6 +7,7 @@ exports.handler = function(context, event, callback) {
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);
+    console.log(event.body);
     
     (async () => {
         try {

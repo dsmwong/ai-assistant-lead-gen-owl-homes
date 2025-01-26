@@ -84,16 +84,16 @@ exports.handler = async function(context, event, callback) {
             );
         });
 
-        // Return paginated response
-        return callback(null, createResponse(200, paginatedResponse(
+        // Return response with metadata
+        return callback(null, createResponse(200, success({
             records,
-            {
+            metadata: {
                 page: 1,
                 pageSize: records.length,
                 total: records.length,
                 hasMore: false
             }
-        )));
+        })));
 
     } catch (err) {
         console.error('Error fetching listings:', err);
