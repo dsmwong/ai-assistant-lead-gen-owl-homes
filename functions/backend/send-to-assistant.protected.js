@@ -1,18 +1,13 @@
 exports.handler = async function(context, event, callback) {
-    // Get all utility functions and providers
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const { validateEmail } = require(Runtime.getAssets()['/utils/validation.js'].path);
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
 
-    // Initialize providers
-    const db = ProviderFactory.getDatabase(context);
-    
     try {
-        // Initialize Twilio client the same way as the old function
         const twilio = require('twilio');
         const client = twilio(context.TWILIO_ACCOUNT_SID, context.TWILIO_AUTH_TOKEN);
+        const db = ProviderFactory.getDatabase(context);
 
-        // Validate required fields
         if (!event.email) {
             throw new Error('Missing required field: email');
         }
@@ -21,28 +16,25 @@ exports.handler = async function(context, event, callback) {
             throw new Error('Invalid email format');
         }
 
-        // Prepare identity
         const identity = `email:${event.email}`;
-
-        // Check for existing session in Airtable Sessions table
         const existingSession = await db.getSession(identity);
+        const webhookUrl = `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`;
+        
+        console.log('Webhook URL being used:', webhookUrl);
 
-        // Prepare message configuration based on existing session
         let messageConfig;
         if (existingSession) {
-            // Use existing session
             const rawSessionId = existingSession.get('session_id');
             const cleanSessionId = rawSessionId.replace('webhook:', '');
-
+            
             messageConfig = {
                 identity: identity,
                 body: event.response,
-                webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
+                webhook: webhookUrl,
                 session_id: cleanSessionId,
                 mode: "email"
             };
         } else {
-            // Create new session with full message body
             if (!event.first_name || !event.area_code) {
                 throw new Error('Missing required fields for new lead: first_name and area_code');
             }
@@ -52,18 +44,20 @@ exports.handler = async function(context, event, callback) {
             messageConfig = {
                 identity: identity,
                 body: messageBody,
-                webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`,
+                webhook: webhookUrl,
                 mode: "email"
             };
         }
-        console.log(messageConfig)
-        // Send message to AI Assistant - using the same structure as the old function
+
+        console.log('Full message config:', JSON.stringify(messageConfig, null, 2));
+
         const message = await client.assistants.v1
             .assistants(context.ASSISTANT_ID)
             .messages
             .create(messageConfig);
 
-        // Return success response with the same structure as the old function
+        console.log('Assistant response:', JSON.stringify(message, null, 2));
+
         return callback(null, createResponse(200, success({
             message_status: message.status,
             session_id: message.session_id,
@@ -76,11 +70,10 @@ exports.handler = async function(context, event, callback) {
     } catch (err) {
         console.error('Error sending to assistant:', err);
         
-        // Determine appropriate status code
         const statusCode = err.message.includes('Missing required') || 
                           err.message.includes('Invalid email') ? 400 : 500;
 
-        const errorResponse = error(
+        return callback(null, createResponse(statusCode, error(
             err.message,
             statusCode,
             process.env.NODE_ENV === 'development' ? {
@@ -89,8 +82,6 @@ exports.handler = async function(context, event, callback) {
                 status: err.status,
                 more_info: err.more_info
             } : undefined
-        );
-
-        return callback(null, createResponse(statusCode, errorResponse));
+        )));
     }
 };

@@ -1,31 +1,38 @@
 exports.handler = async function(context, event, callback) {
-
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const { validateSessionId } = require(Runtime.getAssets()['/utils/validation.js'].path);
 
+    console.log('Received webhook request:', {
+        method: event.request?.method,
+        headers: event.request?.headers,
+        body: event
+    });
+
     try {
-        // Initialize Twilio client and providers
         const twilio = require('twilio');
         const client = twilio(context.TWILIO_ACCOUNT_SID, context.TWILIO_AUTH_TOKEN);
         const db = ProviderFactory.getDatabase(context);
 
-        // Validate configuration
-        const missingConfig = ProviderFactory.validateConfig(context);
-        if (missingConfig) {
-            throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
-        }
-
-        // Validate session data
         if (!event.SessionId || !event.Identity || !event.Body) {
+            console.error('Missing required data:', { 
+                SessionId: !!event.SessionId, 
+                Identity: !!event.Identity, 
+                Body: !!event.Body 
+            });
             throw new Error('Missing required session data');
         }
+
+        console.log('Processing session with data:', {
+            SessionId: event.SessionId,
+            Identity: event.Identity,
+            AssistantSid: event.AssistantSid
+        });
 
         if (!validateSessionId(event.SessionId)) {
             throw new Error('Invalid session ID format');
         }
 
-        // Prepare session data
         const sessionData = {
             session_id: event.SessionId,
             assistant_id: event.AssistantSid,
@@ -34,36 +41,38 @@ exports.handler = async function(context, event, callback) {
             updated_at: new Date().toISOString()
         };
 
-        // Get existing session or create new one
         const existingSession = await db.getSession(sessionData.identity);
         let sessionRecord;
 
         if (existingSession) {
-            // Update existing session
+            console.log('Updating existing session:', existingSession.id);
             sessionRecord = await db.updateSession(existingSession.id, {
                 last_message: sessionData.last_message,
                 updated_at: sessionData.updated_at
             });
         } else {
-            // Create new session
+            console.log('Creating new session');
             sessionData.created_at = sessionData.updated_at;
             sessionRecord = await db.createSession(sessionData);
         }
 
-        // Prepare message for AI Assistant Manager
+        console.log('Session record processed:', sessionRecord.id);
+
         const messageConfig = {
             identity: sessionData.identity,
             body: `Please use the "Outbound Email Grader" tool for the following email body: ${sessionData.last_message}`,
             mode: "email"
         };
 
-        // Send to AI Assistant Manager
+        console.log('Sending to AI Assistant Manager:', messageConfig);
+
         const assistantMessage = await client.assistants.v1
             .assistants(context.ASSISTANT_ID_MANAGER)
             .messages
             .create(messageConfig);
 
-        // Return combined success response
+        console.log('AI Assistant Manager response:', assistantMessage);
+
         return callback(null, createResponse(200, success({
             session_data: sessionRecord,
             assistant_response: {
@@ -78,8 +87,7 @@ exports.handler = async function(context, event, callback) {
 
     } catch (err) {
         console.error('Error processing session:', err);
-
-        // Determine appropriate status code
+        
         const statusCode = err.message.includes('Missing required') ? 400 : 500;
 
         return callback(null, createResponse(statusCode, error(

@@ -1,3 +1,4 @@
+// assets/providers/database/airtable.private.js
 const Airtable = require('airtable');
 
 class AirtableProvider {
