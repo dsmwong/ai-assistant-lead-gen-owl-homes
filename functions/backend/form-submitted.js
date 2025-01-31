@@ -58,13 +58,12 @@ exports.handler = function(context, event, callback) {
                 email: event.email,
                 first_name: event.first_name,
                 area_code: event.area_code,
-                interest: event.interest || '', // Ensure interest is never undefined
+                interest: event.interest || '',
                 is_new_lead: true // Flag to indicate this is a new lead submission
             };
 
             console.log('Attempting to send to assistant:', assistantPayload);
 
-            // Modified fetch call with better error handling
             try {
                 const assistantResponse = await fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
                     method: 'POST',
