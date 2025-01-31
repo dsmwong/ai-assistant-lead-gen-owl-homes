@@ -2,12 +2,20 @@ const sgMail = require('@sendgrid/mail');
 
 class SendGridProvider {
   constructor(apiKey, senderEmail) {
-    super();
     if (!apiKey || !senderEmail) {
       throw new Error('SendGrid API key and sender email are required');
     }
     sgMail.setApiKey(apiKey);
     this.senderEmail = senderEmail;
+  }
+
+  getEmailFromIdentity(identity) {
+    // Handle identity strings in format "email:user@example.com"
+    if (typeof identity === 'string' && identity.startsWith('email:')) {
+      return identity.substring(6); // Remove 'email:' prefix
+    }
+    // If it's already just an email address, return as is
+    return identity;
   }
 
   async send(to, body, subject, options = {}) {

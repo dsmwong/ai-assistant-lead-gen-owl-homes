@@ -74,13 +74,22 @@ exports.handler = function(context, event, callback) {
                     body: JSON.stringify(assistantPayload)
                 });
 
+                const contentType = assistantResponse.headers.get('content-type');
+                let responseData;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await assistantResponse.json();
+                } else {
+                    const textResponse = await assistantResponse.text();
+                    console.error('Unexpected response format:', textResponse);
+                    throw new Error('Received non-JSON response from assistant');
+                }
+
                 if (!assistantResponse.ok) {
-                    const responseData = await assistantResponse.json();
                     console.error('Assistant error response:', responseData);
                     throw new Error(`Assistant request failed: ${responseData.error || 'Unknown error'}`);
                 }
 
-                const responseData = await assistantResponse.json();
                 console.log('Assistant response:', responseData);
             } catch (fetchError) {
                 console.error('Error sending to assistant:', fetchError);

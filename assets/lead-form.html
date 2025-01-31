@@ -67,7 +67,7 @@
             Please fill out the form below and our AI assistant will be in touch shortly to discuss your home buying or selling needs.
           </p>
           <hr />
-          <form action="https://${context.FUNCTIONS_DOMAIN}/backend/form-submitted" method="POST" id="lead-form">
+          <form id="lead-form" method="POST">
             <div class="form-field">
               <label for="first_name">First Name</label>
               <input
@@ -140,6 +140,12 @@
       const submitButton = document.getElementById("submit-button");
       const status = document.getElementById("status");
 
+      // Get the functions domain from the current URL or environment
+      const FUNCTIONS_DOMAIN = window.FUNCTIONS_DOMAIN || window.location.hostname;
+      
+      // Set the form action URL dynamically
+      form.action = `https://${FUNCTIONS_DOMAIN}/backend/form-submitted`;
+
       function setStatus(message, klass) {
         status.textContent = message;
         status.classList.add(klass);
@@ -157,6 +163,12 @@
         submitButton.setAttribute("disabled", "disabled");
         hideStatus();
         
+        if (!FUNCTIONS_DOMAIN) {
+          setStatus("Configuration error: FUNCTIONS_DOMAIN is not set", "error");
+          submitButton.removeAttribute("disabled");
+          return;
+        }
+
         const formData = {
           first_name: document.getElementById("first_name").value,
           last_name: document.getElementById("last_name").value,
@@ -167,8 +179,8 @@
         };
 
         try {
-          const response = await fetch(form.getAttribute("action"), {
-            method: form.getAttribute("method"),
+          const response = await fetch(form.action, {
+            method: "POST",
             body: JSON.stringify(formData),
             headers: {
               "Content-Type": "application/json",

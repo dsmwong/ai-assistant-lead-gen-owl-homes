@@ -9,11 +9,11 @@ exports.handler = async function(context, event, callback) {
         const db = ProviderFactory.getDatabase(context);
 
         if (!event.email) {
-            throw new Error('Missing required field: email');
+            return callback(null, createResponse(400, error('Missing required field: email', 400)));
         }
 
         if (!validateEmail(event.email)) {
-            throw new Error('Invalid email format');
+            return callback(null, createResponse(400, error('Invalid email format', 400)));
         }
 
         const identity = `email:${event.email}`;
