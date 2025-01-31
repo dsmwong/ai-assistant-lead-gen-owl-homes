@@ -47,6 +47,7 @@ exports.handler = function(context, event, callback) {
                 email: event.email,
                 phone: event.phone,
                 area_code: event.area_code,
+                interest: event.interest,
                 status: 'New'
             });
 
@@ -56,7 +57,9 @@ exports.handler = function(context, event, callback) {
             const assistantPayload = {
                 email: event.email,
                 first_name: event.first_name,
-                area_code: event.area_code
+                area_code: event.area_code,
+                interest: event.interest || '', // Ensure interest is never undefined
+                is_new_lead: true // Flag to indicate this is a new lead submission
             };
 
             console.log('Attempting to send to assistant:', assistantPayload);
@@ -66,17 +69,20 @@ exports.handler = function(context, event, callback) {
                 const assistantResponse = await fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${Buffer.from(`${context.TWILIO_ACCOUNT_SID}:${context.TWILIO_AUTH_TOKEN}`).toString('base64')}`
                     },
                     body: JSON.stringify(assistantPayload)
                 });
 
-                const responseData = await assistantResponse.json();
-                console.log('Assistant response:', responseData);
-
                 if (!assistantResponse.ok) {
+                    const responseData = await assistantResponse.json();
+                    console.error('Assistant error response:', responseData);
                     throw new Error(`Assistant request failed: ${responseData.error || 'Unknown error'}`);
                 }
+
+                const responseData = await assistantResponse.json();
+                console.log('Assistant response:', responseData);
             } catch (fetchError) {
                 console.error('Error sending to assistant:', fetchError);
                 // We don't throw here because we still want to return success for the lead creation

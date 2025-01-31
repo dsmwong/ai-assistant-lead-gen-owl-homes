@@ -13,7 +13,7 @@
       href="https://twilio-labs.github.io/function-templates/static/v1/ce-paste-theme.css"
     />
     <link rel="stylesheet" href="./style.css" />
-    <title>Lead Generation Form</title>
+    <title>Owl Homes - Lead Generation Form</title>
   </head>
   <body>
     <div class="page-top">
@@ -62,9 +62,9 @@
     <main>
       <div class="content">
         <section>
-          <h2>Lead Generation Form</h2>
+          <h2>Welcome to Owl Homes</h2>
           <p>
-            Please fill out the form below and our AI assistant will be in touch shortly to discuss your needs.
+            Please fill out the form below and our AI assistant will be in touch shortly to discuss your home buying or selling needs.
           </p>
           <hr />
           <form action="https://nmogil-tw-ai-assistants-lead-gen-7984-dev.twil.io/backend/form-submitted" method="POST" id="lead-form">
@@ -118,15 +118,6 @@
               />
             </div>
             <div class="form-field">
-              <label for="company">Company</label>
-              <input
-                type="text"
-                name="company"
-                id="company"
-                required
-              />
-            </div>
-            <div class="form-field">
               <label for="interest">Interest/Notes</label>
               <textarea name="interest" id="interest" required></textarea>
             </div>
@@ -172,7 +163,6 @@
           email: document.getElementById("email").value,
           phone: document.getElementById("phone").value,
           area_code: document.getElementById("area_code").value,
-          company: document.getElementById("company").value,
           interest: document.getElementById("interest").value
         };
 
