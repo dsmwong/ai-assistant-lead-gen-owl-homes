@@ -24,26 +24,18 @@ exports.handler = async function(context, event, callback) {
         console.log('Checking for existing session:', { identity, existingSession });
 
         let messageConfig;
-        if (existingSession) {
+        if (existingSession && event.response) {
             const rawSessionId = existingSession.get('session_id');
             const cleanSessionId = rawSessionId.replace('webhook:', '');
-            
-            if (!event.response) {
-                    throw new Error('Missing required field: response for existing session');
-                }
                 
-                messageConfig = {
-                    identity: identity,
-                    body: event.response,
-                    webhook: webhookUrl,
-                    session_id: cleanSessionId,
-                    mode: "email"
-                };
-        } else {
-            if (!event.first_name || !event.area_code) {
-                throw new Error('Missing required fields for new lead: first_name and area_code');
-            }
-
+            messageConfig = {
+                identity: identity,
+                body: event.response,
+                webhook: webhookUrl,
+                session_id: cleanSessionId,
+                mode: "email"
+            };
+        } else if (event.first_name && event.area_code) {
             const messageBody = `A new lead, named ${event.first_name}, was submitted and they are interested in properties in ${event.area_code}. ${event.interest ? `They provided the following additional information: "${event.interest}".` : ''} Write an email to them with some property recommendations based on their interests and ask if they would like to schedule time with an Owl Home Agent.`;
             
             messageConfig = {
@@ -52,6 +44,8 @@ exports.handler = async function(context, event, callback) {
                 webhook: webhookUrl,
                 mode: "email"
             };
+        } else {
+            throw new Error('Invalid request: Must provide either response for existing conversation or new lead information (first_name and area_code)');
         }
 
         console.log('Full message config:', JSON.stringify(messageConfig, null, 2));
