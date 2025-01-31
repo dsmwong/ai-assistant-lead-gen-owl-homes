@@ -86,4 +86,11 @@ textarea {
 .button-primary:disabled {
   background-color: rgb(136, 145, 170);
   cursor: not-allowed;
+}
+
+.help-text {
+  display: block;
+  color: rgb(96, 107, 133);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 } 
