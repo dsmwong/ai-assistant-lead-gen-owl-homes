@@ -12,6 +12,10 @@ const createTools = require('./lib/createTools');
 const createKnowledge = require('./lib/createKnowledge');
 const createVoiceIntel = require('./lib/createVoiceIntel');
 const deployFunctions = require('./lib/deployFunctions');
+const managerAssistantConfig = require('./config/manager-assistant');
+const repAssistantConfig = require('./config/rep-assistant');
+const managerToolsConfig = require('./config/manager-tools');
+const repToolsConfig = require('./config/rep-tools');
 
 // Create readline interface for user input
 const rl = readline.createInterface({
@@ -56,7 +60,7 @@ async function deploy() {
     );
   }
 
-  console.log('Starting AI Assistant deployment...\n');
+  console.log('Starting AI Assistants deployment...\n');
 
   const client = twilio(
     process.env.TWILIO_ACCOUNT_SID,
@@ -72,67 +76,62 @@ async function deploy() {
     // Step 1: Deploy Twilio Functions backend
     console.log('Step 1: Deploying Twilio Functions backend...');
     const result = await deployFunctions(serverlessClient);
-    console.log('✓ Twilio Functions backend deployed successfully\n ');
+    console.log('✓ Twilio Functions backend deployed successfully\n');
 
     // Save Functions domain to .env
     updateEnvFile('FUNCTIONS_DOMAIN', result.domain);
 
-    // Step 2: Create the assistant
-    console.log('Step 2: Creating AI Assistant...');
-    const assistant = await createAssistant(client, assistantConfig);
-    console.log('✓ Assistant created successfully');
-    console.log('Assistant SID:', assistant.id);
+    // Step 2: Create the manager assistant
+    console.log('Step 2: Creating Manager AI Assistant...');
+    const managerAssistant = await createAssistant(client, managerAssistantConfig);
+    console.log('✓ Manager Assistant created successfully');
+    console.log('Manager Assistant SID:', managerAssistant.id);
 
-    // Save Assistant SID to .env
-    updateEnvFile('ASSISTANT_ID', assistant.id);
+    // Save Manager Assistant SID to .env
+    updateEnvFile('MANAGER_ASSISTANT_ID', managerAssistant.id);
 
-    // Step 3: Create and attach tools
-    console.log('\nStep 3: Creating and attaching tools...');
-    const tools = await createTools(
+    // Step 3: Create and attach manager tools
+    console.log('\nStep 3: Creating and attaching manager tools...');
+    const managerTools = await createTools(
       client,
-      assistant.id,
-      toolsConfig(result.domain)
+      managerAssistant.id,
+      managerToolsConfig(result.domain)
     );
-    console.log(`✓ Successfully created and attached ${tools.length} tools`);
+    console.log(`✓ Successfully created and attached ${managerTools.length} manager tools`);
 
-    // Step 4: Create and attach knowledge bases
-    console.log('\nStep 4: Creating and attaching knowledge bases...');
+    // Step 4: Create the rep assistant
+    console.log('\nStep 4: Creating Rep AI Assistant...');
+    const repAssistant = await createAssistant(client, repAssistantConfig);
+    console.log('✓ Rep Assistant created successfully');
+    console.log('Rep Assistant SID:', repAssistant.id);
+
+    // Save Rep Assistant SID to .env
+    updateEnvFile('REP_ASSISTANT_ID', repAssistant.id);
+
+    // Step 5: Create and attach rep tools
+    console.log('\nStep 5: Creating and attaching rep tools...');
+    const repTools = await createTools(
+      client,
+      repAssistant.id,
+      repToolsConfig(result.domain)
+    );
+    console.log(`✓ Successfully created and attached ${repTools.length} rep tools`);
+
+    // Step 6: Create and attach knowledge bases (if needed for rep assistant)
+    console.log('\nStep 6: Creating and attaching knowledge bases...');
     const knowledge = await createKnowledge(
       client,
-      assistant.id,
+      repAssistant.id,
       knowledgeConfig
     );
-    console.log(
-      `✓ Successfully created and attached ${knowledge.length} knowledge bases`
-    );
+    console.log(`✓ Successfully created and attached ${knowledge.length} knowledge bases`);
 
-    // Step 5: Optional Voice Intelligence Service creation
-    const createVoiceIntelService = await question(
-      '\nWould you like to create a Voice Intelligence Service? (y/n): '
-    );
-    let voiceIntelService = null;
-
-    if (createVoiceIntelService.toLowerCase() === 'y') {
-      console.log('\nStep 5: Creating Voice Intelligence Service...');
-      voiceIntelService = await createVoiceIntel(client);
-      console.log('✓ Voice Intelligence Service created successfully');
-
-      // Save Voice Intelligence Service SID to .env
-      updateEnvFile('INTEL_SERVICE_SID', voiceIntelService.serviceSid);
-    }
-
-    // Step 6: Finishing deployiment configuration
-    console.log(
-      `\nStep ${
-        voiceIntelService ? 6 : 5
-      }: Finishing deployment configuration...`
-    );
+    // Step 7: Finishing deployment configuration
+    console.log('\nStep 7: Finishing deployment configuration...');
     const variables = {
-      ASSISTANT_ID: assistant.id,
+      MANAGER_ASSISTANT_ID: managerAssistant.id,
+      REP_ASSISTANT_ID: repAssistant.id,
     };
-    if (voiceIntelService?.serviceSid) {
-      variables['INTEL_SERVICE_SID'] = voiceIntelService.serviceSid;
-    }
 
     await serverlessClient.setEnvironmentVariables({
       serviceSid: result.serviceSid,
@@ -144,29 +143,26 @@ async function deploy() {
 
     // Deployment summary
     console.log('\n=== Deployment Summary ===');
-    console.log('Assistant SID:', assistant.id);
-    console.log('Tools created:', tools.length);
+    console.log('Manager Assistant SID:', managerAssistant.id);
+    console.log('Manager Tools created:', managerTools.length);
+    console.log('Rep Assistant SID:', repAssistant.id);
+    console.log('Rep Tools created:', repTools.length);
     console.log('Knowledge bases created:', knowledge.length);
-    if (voiceIntelService) {
-      console.log(
-        'Voice Intelligence Service SID:',
-        voiceIntelService.serviceSid
-      );
-    }
     console.log('\nDeployment completed successfully! 🎉');
     console.log('\nNext steps:');
-    console.log('1. Visit the Twilio Console to view your assistant');
-    console.log('2. Test the assistant functionality');
+    console.log('1. Visit the Twilio Console to view your assistants');
+    console.log('2. Test both assistant functionalities');
     console.log('3. Update webhook URLs if needed');
 
     // Close readline interface
     rl.close();
 
     return {
-      assistant,
-      tools,
+      managerAssistant,
+      repAssistant,
+      managerTools,
+      repTools,
       knowledge,
-      voiceIntelService,
     };
   } catch (error) {
     console.error('\n❌ Deployment failed:');
@@ -202,9 +198,12 @@ process.on('SIGINT', async () => {
 if (require.main === module) {
   deploy()
     .then((result) => {
-      console.log('\nYou can now find your assistant in the Twilio Console:');
+      console.log('\nYou can now find your assistants in the Twilio Console:');
       console.log(
-        `https://console.twilio.com/us1/develop/ai-assistants/assistants/${result.assistant.id}`
+        `https://console.twilio.com/us1/develop/ai-assistants/assistants/${result.managerAssistant.id}`
+      );
+      console.log(
+        `https://console.twilio.com/us1/develop/ai-assistants/assistants/${result.repAssistant.id}`
       );
       process.exit(0);
     })

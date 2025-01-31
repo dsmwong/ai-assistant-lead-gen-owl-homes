@@ -51,7 +51,7 @@ exports.handler = async function(context, event, callback) {
         console.log('Full message config:', JSON.stringify(messageConfig, null, 2));
 
         const message = await client.assistants.v1
-            .assistants(context.ASSISTANT_ID)
+            .assistants(context.REP_ASSISTANT_ID)
             .messages
             .create(messageConfig);
 

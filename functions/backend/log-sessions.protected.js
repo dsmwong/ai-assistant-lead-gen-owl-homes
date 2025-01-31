@@ -67,7 +67,7 @@ exports.handler = async function(context, event, callback) {
         console.log('Sending to AI Assistant Manager:', messageConfig);
 
         const assistantMessage = await client.assistants.v1
-            .assistants(context.ASSISTANT_ID_MANAGER)
+            .assistants(context.MANAGER_ASSISTANT_ID)
             .messages
             .create(messageConfig);
 
