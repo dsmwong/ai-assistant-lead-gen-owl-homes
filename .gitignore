@@ -4,3 +4,4 @@ node_modules/
 .twiliodeployinfo
 package-lock.json
 examples/
+.cursorrules

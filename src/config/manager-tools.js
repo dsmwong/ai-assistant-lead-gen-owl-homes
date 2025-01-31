@@ -12,10 +12,10 @@ module.exports = (domain) => ({
     method: 'POST',
     url: `https://${domain}/tools/log-outbound-email`,
     schema: {
-      outbound_email_body: string, //the body of the email the user sent
-      manager_score: number, //grade of orginal users message from 0 to 1 (ex: .85)
-      outbound_email_status: string, //set it to "Sent" if the grade is above 0.85, set it to "Draft" if its not
-      recommended_email_body: string //if you set the status to draft, provided the recommend email body
+      outbound_email_body: "string", //the body of the email the user sent
+      manager_score: "number", //grade of orginal users message from 0 to 1 (ex: .85)
+      outbound_email_status: "string", //set it to "Sent" if the grade is above 0.85, set it to "Draft" if its not
+      recommended_email_body: "string" //if you set the status to draft, provided the recommend email body
     },
   },
 });
