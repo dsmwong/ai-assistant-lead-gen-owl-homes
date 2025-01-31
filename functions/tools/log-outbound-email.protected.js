@@ -76,10 +76,23 @@ exports.handler = async function(context, event, callback) {
         });
         if (managerScore >= 0.085) {
             console.log('[log-outbound-email] Sending email...');
+            
+            // Get most recent inbound email for threading
+            const inboundEmails = await db.getInboundEmails(identity, 1);
+            const threadOptions = {};
+            
+            if (inboundEmails && inboundEmails.length > 0) {
+                const messageId = inboundEmails[0].get('message_id');
+                if (messageId) {
+                    threadOptions.lastMessageId = messageId;
+                }
+            }
+
             await emailProvider.send(
                 identity,
                 event.outbound_email_body || event.recommended_email_body,
-                event.subject || "Exciting New Homes, Just for You"
+                event.subject || "Exciting New Homes, Just for You",
+                threadOptions
             );
             console.log('[log-outbound-email] Email sent successfully');
         }
