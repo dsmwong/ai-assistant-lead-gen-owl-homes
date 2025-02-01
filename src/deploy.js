@@ -151,7 +151,9 @@ async function deploy() {
     console.log('1. Visit the Twilio Console to view your assistants');
     console.log('2. Test both assistant functionalities');
     console.log('3. Update webhook URLs if needed');
-
+    console.log('4. Run ngrok on Port 3000');
+    console.log('5. Add the ngrok URL to SendGrid Inbound Parse');
+    console.log('6. Fill out the Lead Gen Form', `https://${result.domain}/lead-form.html`);
     // Close readline interface
     rl.close();
 

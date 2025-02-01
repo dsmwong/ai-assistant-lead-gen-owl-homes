@@ -19,10 +19,10 @@ async function getEnvironmentVariables() {
   delete variables.TWILIO_ACCOUNT_SID;
   delete variables.TWILIO_AUTH_TOKEN;
 
-  // removing because it's not necessary for the deployed functions
-  if (variables.FUNCTIONS_DOMAIN) {
-    delete variables.FUNCTIONS_DOMAIN;
-  }
+  // Comment out or remove this block
+  // if (variables.FUNCTIONS_DOMAIN) {
+  //   delete variables.FUNCTIONS_DOMAIN;
+  // }
 
   for (const key in variables) {
     if (!variables[key]) {

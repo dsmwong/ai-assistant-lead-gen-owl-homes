@@ -5,7 +5,7 @@ const multipart = require('@fastify/multipart');
 const axios = require('axios');
 
 // Setting Environment variables
-const FORWARD_TO = process.env.FORWARD_TO;
+const FORWARD_TO = `https://${process.env.FUNCTIONS_DOMAIN}/backend/log-inbound-email`;
 const PORT = process.env.PORT || 3000;
 
 if (!FORWARD_TO) {
