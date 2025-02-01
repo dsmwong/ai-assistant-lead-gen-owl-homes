@@ -6,6 +6,7 @@
     "scripts": {
       "start": "node src/deploy.js",
       "deploy": "node src/deploy.js",
+      "redeploy": "node src/redeploy.js",
       "format": "prettier --write .",
       "start:converter": "cd converter && npm start",
       "dev": "concurrently \"npm run start\" \"npm run start:converter\"",
