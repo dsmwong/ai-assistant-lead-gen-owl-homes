@@ -19,10 +19,9 @@ async function getEnvironmentVariables() {
   delete variables.TWILIO_ACCOUNT_SID;
   delete variables.TWILIO_AUTH_TOKEN;
 
-  // Comment out or remove this block
-  // if (variables.FUNCTIONS_DOMAIN) {
-  //   delete variables.FUNCTIONS_DOMAIN;
-  // }
+  if (variables.FUNCTIONS_DOMAIN) {
+    delete variables.FUNCTIONS_DOMAIN;
+  }
 
   for (const key in variables) {
     if (!variables[key]) {
@@ -31,6 +30,28 @@ async function getEnvironmentVariables() {
   }
 
   return variables;
+}
+
+/**
+ * Updates the Twilio Functions environment variables
+ * @param {TwilioServerlessApiClient} serverlessClient
+ * @param {string} serviceSid
+ * @param {string} environmentSid
+ * @param {Record<string, string>} variables
+ */
+async function updateFunctionsEnvironment(serverlessClient, serviceSid, environmentSid, variables) {
+  try {
+    await serverlessClient.setEnvironmentVariables({
+      serviceSid,
+      environment: environmentSid,
+      env: variables,
+      append: true, // Append to existing variables rather than replacing them
+    });
+    console.log('✓ Updated Twilio Functions environment variables');
+  } catch (error) {
+    console.error('Failed to update Twilio Functions environment variables:', error);
+    throw error;
+  }
 }
 
 /**
@@ -57,6 +78,18 @@ async function deployFunctions(serverlessClient) {
     },
   });
   console.log(''); // intentionally empty line to separate the output
+
+  // Update the Twilio Functions environment variables after deployment
+  const envVars = await getEnvironmentVariables();
+  // Add the new Functions domain to the environment variables
+  envVars.FUNCTIONS_DOMAIN = result.domain;
+  
+  await updateFunctionsEnvironment(
+    serverlessClient,
+    result.serviceSid,
+    result.environmentSid,
+    envVars
+  );
 
   return result;
 }
