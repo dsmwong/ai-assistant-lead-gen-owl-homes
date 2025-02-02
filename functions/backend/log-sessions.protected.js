@@ -3,7 +3,7 @@ exports.handler = async function(context, event, callback) {
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const { validateSessionId } = require(Runtime.getAssets()['/utils/validation.js'].path);
 
-    console.log('Received webhook request:', {
+    console.log('[log-sessions] Received webhook request:', {
         method: event.request?.method,
         headers: event.request?.headers,
         body: event
@@ -14,7 +14,7 @@ exports.handler = async function(context, event, callback) {
         const db = ProviderFactory.getDatabase(context);
 
         if (!event.SessionId || !event.Identity || !event.Body) {
-            console.error('Missing required data:', { 
+            console.error('[log-sessions] Missing required data:', { 
                 SessionId: !!event.SessionId, 
                 Identity: !!event.Identity, 
                 Body: !!event.Body 
@@ -22,7 +22,7 @@ exports.handler = async function(context, event, callback) {
             throw new Error('Missing required session data');
         }
 
-        console.log('Processing session with data:', {
+        console.log('[log-sessions] Processing session with data:', {
             SessionId: event.SessionId,
             Identity: event.Identity,
             AssistantSid: event.AssistantSid
@@ -44,18 +44,18 @@ exports.handler = async function(context, event, callback) {
         let sessionRecord;
 
         if (existingSession) {
-            console.log('Updating existing session:', existingSession.id);
+            console.log('[log-sessions] Updating existing session:', existingSession.id);
             sessionRecord = await db.updateSession(existingSession.id, {
                 last_message: sessionData.last_message,
                 updated_at: sessionData.updated_at
             });
         } else {
-            console.log('Creating new session');
+            console.log('[log-sessions] Creating new session');
             sessionData.created_at = sessionData.updated_at;
             sessionRecord = await db.createSession(sessionData);
         }
 
-        console.log('Session record processed:', sessionRecord.id);
+        console.log('[log-sessions] Session record processed:', sessionRecord.id);
 
         const messageConfig = {
             identity: sessionData.identity,
@@ -63,14 +63,14 @@ exports.handler = async function(context, event, callback) {
             mode: "email"
         };
 
-        console.log('Sending to AI Assistant Manager:', messageConfig);
+        console.log('[log-sessions] Sending to AI Assistant Manager:', messageConfig);
 
         const assistantMessage = await client.assistants.v1
             .assistants(context.MANAGER_ASSISTANT_ID)
             .messages
             .create(messageConfig);
 
-        console.log('AI Assistant Manager response:', assistantMessage);
+        console.log('[log-sessions] AI Assistant Manager response:', assistantMessage);
 
         return callback(null, createResponse(200, success({
             session_data: sessionRecord,
@@ -85,7 +85,7 @@ exports.handler = async function(context, event, callback) {
         })));
 
     } catch (err) {
-        console.error('Error processing session:', err);
+        console.error('[log-sessions] Error processing session:', err);
         
         const statusCode = err.message.includes('Missing required') ? 400 : 500;
 

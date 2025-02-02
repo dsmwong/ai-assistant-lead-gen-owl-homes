@@ -1,4 +1,5 @@
 exports.handler = async function(context, event, callback) {
+    console.log('[get-listings] Handler started', { event });
     
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const { validateZipCode, validateState, validatePrice } = require(Runtime.getAssets()['/utils/validation.js'].path);
@@ -6,16 +7,20 @@ exports.handler = async function(context, event, callback) {
 
     // Initialize database provider
     const db = ProviderFactory.getDatabase(context);
+    console.log('[get-listings] Database provider initialized');
 
     try {
         // Validate configuration
         const missingConfig = ProviderFactory.validateConfig(context);
         if (missingConfig) {
+            console.log('[get-listings] Missing configuration', { missingConfig });
             throw new Error(`Missing configuration: ${JSON.stringify(missingConfig)}`);
         }
 
         // Extract and validate filter criteria
         const { city, state, zip_code, price } = event;
+        console.log('[get-listings] Processing filter criteria', { city, state, zip_code, price });
+        
         const validationErrors = {};
 
         if (state && !validateState(state)) {
@@ -31,6 +36,7 @@ exports.handler = async function(context, event, callback) {
         }
 
         if (Object.keys(validationErrors).length > 0) {
+            console.log('[get-listings] Validation errors found', { validationErrors });
             return callback(null, createResponse(400, error(
                 'Validation failed',
                 400,
@@ -46,6 +52,8 @@ exports.handler = async function(context, event, callback) {
         if (zip_code) filterConditions.push(`{zip_code} = '${zip_code}'`);
         if (price) filterConditions.push(`{price} <= ${parseFloat(price)}`);
 
+        console.log('[get-listings] Filter conditions built', { filterConditions });
+
         // Query Airtable
         const records = await new Promise((resolve, reject) => {
             let allRecords = [];
@@ -56,6 +64,7 @@ exports.handler = async function(context, event, callback) {
                     : ''
             }).eachPage(
                 function page(records, fetchNextPage) {
+                    console.log('[get-listings] Processing page of records', { count: records.length });
                     records.forEach(record => {
                         allRecords.push({
                             id: record.get('id'),
@@ -76,8 +85,10 @@ exports.handler = async function(context, event, callback) {
                 },
                 function done(err) {
                     if (err) {
+                        console.log('[get-listings] Error fetching records', { error: err.message });
                         reject(err);
                     } else {
+                        console.log('[get-listings] Successfully fetched all records', { totalRecords: allRecords.length });
                         resolve(allRecords);
                     }
                 }
@@ -85,6 +96,7 @@ exports.handler = async function(context, event, callback) {
         });
 
         // Return response with metadata
+        console.log('[get-listings] Returning successful response', { recordCount: records.length });
         return callback(null, createResponse(200, success({
             records,
             metadata: {
@@ -96,7 +108,7 @@ exports.handler = async function(context, event, callback) {
         })));
 
     } catch (err) {
-        console.error('Error fetching listings:', err);
+        console.error('[get-listings] Error in handler:', err);
         
         return callback(null, createResponse(500, error(
             'Error fetching listings',

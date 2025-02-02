@@ -57,7 +57,7 @@ exports.handler = async function(context, event, callback) {
                 }
             }
         } catch (lookupError) {
-            console.warn('Error looking up thread history:', lookupError);
+            console.warn('[send-email] Error looking up thread history:', lookupError);
             // Continue without threading if lookup fails
         }
 
@@ -76,7 +76,7 @@ exports.handler = async function(context, event, callback) {
         })));
 
     } catch (err) {
-        console.error('Error sending email:', err);
+        console.error('[send-email] Error sending email:', err);
 
         // Determine appropriate status code
         const statusCode = err.message.includes('Missing required') || 

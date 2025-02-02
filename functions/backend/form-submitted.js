@@ -51,7 +51,7 @@ exports.handler = function(context, event, callback) {
                 status: 'New'
             });
 
-            console.log('Lead created successfully:', leadId);
+            console.log('[form-submitted] Lead created successfully:', leadId);
 
             // Prepare assistant payload
             const assistantPayload = {
@@ -62,7 +62,7 @@ exports.handler = function(context, event, callback) {
                 is_new_lead: true // Flag to indicate this is a new lead submission
             };
 
-            console.log('Attempting to send to assistant:', assistantPayload);
+            console.log('[form-submitted] Attempting to send to assistant:', assistantPayload);
 
             try {
                 const assistantResponse = await fetch(`https://${context.FUNCTIONS_DOMAIN}/backend/send-to-assistant`, {
@@ -81,18 +81,18 @@ exports.handler = function(context, event, callback) {
                     responseData = await assistantResponse.json();
                 } else {
                     const textResponse = await assistantResponse.text();
-                    console.error('Unexpected response format:', textResponse);
+                    console.error('[form-submitted] Unexpected response format:', textResponse);
                     throw new Error('Received non-JSON response from assistant');
                 }
 
                 if (!assistantResponse.ok) {
-                    console.error('Assistant error response:', responseData);
+                    console.error('[form-submitted] Assistant error response:', responseData);
                     throw new Error(`Assistant request failed: ${responseData.error || 'Unknown error'}`);
                 }
 
-                console.log('Assistant response:', responseData);
+                console.log('[form-submitted] Assistant response:', responseData);
             } catch (fetchError) {
-                console.error('Error sending to assistant:', fetchError);
+                console.error('[form-submitted] Error sending to assistant:', fetchError);
                 // We don't throw here because we still want to return success for the lead creation
             }
             
@@ -103,7 +103,7 @@ exports.handler = function(context, event, callback) {
             })));
             
         } catch (err) {
-            console.error('Error processing form submission:', err);
+            console.error('[form-submitted] Error processing form submission:', err);
             
             return callback(null, createResponse(500, error(
                 'Internal server error processing form submission',

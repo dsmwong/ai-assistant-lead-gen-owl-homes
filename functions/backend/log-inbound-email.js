@@ -7,7 +7,7 @@ exports.handler = function(context, event, callback) {
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);
-    console.log(event.body);
+    console.log('[log-inbound-email] Event body:', event.body);
     
     (async () => {
         try {
@@ -59,7 +59,7 @@ exports.handler = function(context, event, callback) {
                 });
             } catch (aiError) {
                 // Log error but continue execution
-                console.error('Error sending to AI assistant:', aiError);
+                console.error('[log-inbound-email] Error sending to AI assistant:', aiError);
             }
 
             // Return success response
@@ -69,7 +69,7 @@ exports.handler = function(context, event, callback) {
             })));
 
         } catch (err) {
-            console.error('Error processing inbound email:', err);
+            console.error('[log-inbound-email] Error processing inbound email:', err);
 
             // Determine appropriate status code
             const statusCode = err.message.includes('No session found') ? 404 : 500;

@@ -19,8 +19,8 @@ exports.handler = async function(context, event, callback) {
         const existingSession = await db.getSession(identity);
         const webhookUrl = `https://${context.FUNCTIONS_DOMAIN}/backend/log-sessions`;
         
-        console.log('Webhook URL being used:', webhookUrl);
-        console.log('Checking for existing session:', { identity, existingSession });
+        console.log('[send-to-assistant] Webhook URL being used:', webhookUrl);
+        console.log('[send-to-assistant] Checking for existing session:', { identity, existingSession });
 
         let messageConfig;
         if (existingSession && event.response) {
@@ -47,14 +47,14 @@ exports.handler = async function(context, event, callback) {
             throw new Error('Invalid request: Must provide either response for existing conversation or new lead information (first_name and area_code)');
         }
 
-        console.log('Full message config:', JSON.stringify(messageConfig, null, 2));
+        console.log('[send-to-assistant] Full message config:', JSON.stringify(messageConfig, null, 2));
 
         const message = await client.assistants.v1
             .assistants(context.REP_ASSISTANT_ID)
             .messages
             .create(messageConfig);
 
-        console.log('Assistant response:', JSON.stringify(message, null, 2));
+        console.log('[send-to-assistant] Assistant response:', JSON.stringify(message, null, 2));
 
         return callback(null, createResponse(200, success({
             message_status: message.status,
@@ -66,7 +66,7 @@ exports.handler = async function(context, event, callback) {
         })));
 
     } catch (err) {
-        console.error('Error sending to assistant:', err);
+        console.error('[send-to-assistant] Error sending to assistant:', err);
         
         const statusCode = err.message.includes('Missing required') || 
                           err.message.includes('Invalid email') ? 400 : 500;
