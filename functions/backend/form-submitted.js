@@ -69,7 +69,7 @@ exports.handler = function(context, event, callback) {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Basic ${Buffer.from(`${context.TWILIO_ACCOUNT_SID}:${context.TWILIO_AUTH_TOKEN}`).toString('base64')}`
+                        'Authorization': `Basic ${Buffer.from(`${context.ACCOUNT_SID}:${context.AUTH_TOKEN}`).toString('base64')}`
                     },
                     body: JSON.stringify(assistantPayload)
                 });

@@ -4,8 +4,7 @@ exports.handler = async function(context, event, callback) {
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
 
     try {
-        const twilio = require('twilio');
-        const client = twilio(context.TWILIO_ACCOUNT_SID, context.TWILIO_AUTH_TOKEN);
+        const client = context.getTwilioClient();
         const db = ProviderFactory.getDatabase(context);
 
         if (!event.email) {
