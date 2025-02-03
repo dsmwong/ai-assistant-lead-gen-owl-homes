@@ -68,7 +68,7 @@ async function deployFunctions(serverlessClient) {
 
   const result = await serverlessClient.deployLocalProject({
     cwd: process.cwd(),
-    serviceName: 'ai-assistant-lead-gen',
+    serviceName: 'ai-assistant-lead-gen-owl-homes',
     functionsEnv: 'dev',
     env: await getEnvironmentVariables(),
     uiEditable: true,
@@ -77,7 +77,7 @@ async function deployFunctions(serverlessClient) {
       dependencies: pkgJson.dependencies,
     },
   });
-  console.log(''); // intentionally empty line to separate the output
+  console.log('');
 
   // Update the Twilio Functions environment variables after deployment
   const envVars = await getEnvironmentVariables();

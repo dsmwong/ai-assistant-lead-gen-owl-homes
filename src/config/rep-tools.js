@@ -20,10 +20,10 @@ module.exports = (domain) => ({
     method: 'GET',
     url: `https://${domain}/tools/get-listings`,
     schema: {
-      city: "string", //the city the user is interested in
-      zip_code: "string", //the zip code the user is interested in
-      state: "string", //the state the user is interested in
-      price: "number" //the maximum about the user will pay
+      "city?": "string", //the city the user is interested in
+      "zip_code?": "string", //the zip code the user is interested in
+      "state?": "string", //the state the user is interested in
+      "price?": "number" //the maximum about the user will pay
     },
   },
 });
