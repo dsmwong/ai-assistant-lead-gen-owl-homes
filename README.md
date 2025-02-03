@@ -14,8 +14,8 @@ Before deploying the project, ensure you have the following:
 ## Setup
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/twilio/nmogil-tw-ai-assistants-lead-gen.git
-cd nmogil-tw-ai-assistants-lead-gen
+git clone https://github.com/twilio-samples/ai-assistant-lead-gen-owl-homes.git
+cd ai-assistant-lead-gen-owl-homes
 ```
 
 ### 2. Install Dependencies
