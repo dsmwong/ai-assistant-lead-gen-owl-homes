@@ -1,125 +1,207 @@
-# AI Assistant Lead Gen Owl Homes
+> [!NOTE]
+> Twilio AI Assistants is a [Twilio Alpha](https://twilioalpha.com) project that is currently in Developer Preview.
 
-## Overview
-This project is a Twilio AI Assistant for lead generation with Owl Homes. It captures lead information, manages email communications via SendGrid, and integrates with Twilio services for conversations and automation.
+# AI-Powered Lead Generation System
+
+A scalable, multi-channel lead generation system powered by Twilio AI Assistants. This reference implementation demonstrates how to build an AI-driven lead nurturing system that can capture leads through various channels and engage in personalized conversations.
+
+## System Architecture
+[Architecture diagram showing system components and flow]
+
+## Key Features
+
+- 🤖 Dual AI Assistant System
+  - Rep Assistant: Handles initial customer interactions and generates responses
+  - Manager Assistant: Reviews and approves outbound communications
+- 📱 Multi-Channel Support
+  - Web form lead capture
+  - Email communication (via SendGrid)
+  - SMS, Voice, and WhatsApp (via Twilio)
+  - Web chat integration
+- 💾 Automated Data Management
+  - Lead information storage
+  - Conversation history tracking
+  - Email thread management
+- 🔄 Intelligent Workflow
+  - Automated response generation
+  - Quality control through Manager AI review
+  - Channel-specific response handling
+
+## Project Structure
+
+```
+lead-gen-ai-assistant/
+├── README.md
+├── package.json
+├── .env.example
+├── .twilioserverlessrc
+├── assets/
+│   ├── index.html
+│   ├── lead-form.html
+│   ├── style.css
+│   ├── providers/
+│   │   ├── database/
+│   │   └── email/
+│   └── utils/
+├── converter/
+│   ├── package.json
+│   └── server.js
+├── functions/
+│   ├── backend/
+│   │   ├── form-submitted.js
+│   │   ├── log-inbound-email.js
+│   │   ├── send-email.js
+│   │   └── send-to-assistant.js
+│   ├── channels/
+│   │   ├── conversations/
+│   │   ├── messaging/
+│   │   └── voice/
+│   └── tools/
+├── knowledge/
+│   └── faq.txt
+├── prompts/
+│   ├── manager-assistant-prompt.md
+│   └── rep-assistant-prompt.md
+└── src/
+    ├── deploy.js
+    └── config/
+```
 
 ## Prerequisites
-Before deploying the project, ensure you have the following:
+
 - Node.js 18+
-- Twilio Account
-- SendGrid Account
-- Airtable Account (if using Airtable as a database)
-- ngrok (for local development)
+- Twilio account with AI Assistant access
+- SendGrid account
+- Airtable account
+- ngrok installed locally (for webhook testing)
 
-## Setup
-### 1. Clone the Repository
-```bash
-git clone https://github.com/twilio-samples/ai-assistant-lead-gen-owl-homes.git
-cd ai-assistant-lead-gen-owl-homes
-```
+## Setup Instructions
 
-### 2. Install Dependencies
+### 1. Clone and Configure
+
 ```bash
+# Clone repository
+git clone https://github.com/your-org/lead-gen-ai-assistant.git
+cd lead-gen-ai-assistant
+
+# Install dependencies
 npm install
-```
 
-### 3. Configure Environment Variables
-Copy the `.env.example` file to `.env` and update it with your Twilio, SendGrid, and Airtable credentials.
-```bash
+# Copy environment file
 cp .env.example .env
-nano .env
 ```
 
-## Deployment
-### Deploying the Script
-To deploy the Twilio Serverless Functions:
+### 2. Configure Services
+
+#### Airtable Setup
+1. Copy the Airtable base using [this template](link-to-airtable-template)
+2. Find your Base ID in the Airtable URL (appXXXXXXXXXXXXX)
+3. Generate an access token:
+   - Go to your Airtable account settings
+   - Click "Create new token"
+   - Select necessary scopes for your base
+   - Copy the generated token
+
+The base includes these tables:
+- **Leads**: Track lead information (first_name, last_name, status, email, phone, area_code)
+- **Sessions**: Manage conversation sessions and email grading
+- **Inbound Emails**: Log incoming communications
+- **Listings**: Store property listing data
+
+#### SendGrid Inbound Parse Setup
+1. Set up your SendGrid account and verify your domain
+2. Navigate to Settings > Inbound Parse
+3. Start ngrok: `ngrok http 3000`
+4. Add a new Inbound Parse webhook:
+   - URL: Your ngrok URL
+   - Select "Post the raw, full MIME message"
+5. Test the webhook using SendGrid's test feature
+
+### 3. Deploy the System
+
 ```bash
+# Deploy the system
 npm run deploy
-```
 
-### Re-deploying Functions
-If you make changes and need to re-deploy:
-```bash
-npm run redeploy
-```
-
-### Running the SendGrid Email Converter
-To start the SendGrid inbound email converter:
-```bash
+# Start the content type converter before reciving any inbound emails
 npm run start:converter
 ```
 
+## AI Assistant Tools
+
+### Rep Assistant Tools
+
+1. **Customer Lookup**
+   - Purpose: Retrieves customer information at the start of conversations
+   - When to use: Mandatory at the beginning of each conversation
+   - Available data: First name, last name, address, email, phone
+   - Method: GET
+   - Usage: Enables personalized greetings and context-aware interactions
+
+2. **Get Listings**
+   - Purpose: Searches property listings based on customer criteria
+   - Parameters:
+     - city (optional): Target city
+     - zip_code (optional): Specific ZIP code
+     - state (optional): State code
+     - price (optional): Maximum price point
+   - Method: GET
+   - Usage: Provides relevant property recommendations based on customer preferences
+
+### Manager Assistant Tools
+
+1. **Outbound Email Grader**
+   - Purpose: Reviews and scores email communications
+   - Parameters:
+     - outbound_email_body: Original email content
+     - manager_score: Quality score (0 to 1, e.g., 0.85)
+     - outbound_email_status: "Sent" (score > 0.85) or "Draft"
+     - recommended_email_body: Suggested improvements for low-scoring emails
+   - Method: POST
+   - Usage: Quality control for all outbound email communications
+
 ## Connecting Channels
-
-After deploying your functions and assistant, you'll need to connect various Twilio channels. Here's how to set up each channel:
-
-- [Conversations](https://www.twilio.com/docs/alpha/ai-assistants/code-samples/channel-conversations)
-- [SMS & Whatsapp](https://www.twilio.com/docs/alpha/ai-assistants/code-samples/channel-messaging)
-- [Conversations with React](https://www.twilio.com/docs/alpha/ai-assistants/code-samples/react)
-- [Transition to Flex](https://www.twilio.com/docs/alpha/ai-assistants/code-samples/transition-flex)
-- [Flex Voice Handoff](https://docs.google.com/document/d/14RuOxt6FUAuc62A7BmeQFZWHr5WcXOoQZluZEF98GJA/edit?usp=sharing)
-- [Transition to Sudio](https://www.twilio.com/docs/alpha/ai-assistants/code-samples/transition-studio)
-- [Other Examples](https://github.com/twilio-labs/ai-assistants-samples)
 
 ### Voice Channel
 
-:warning: **Add your Assistant ID to the incoming-call function**
-
-Configure your Twilio voice number to use the AI Assistant:
+Configure your Twilio voice number:
 
 **Via Twilio CLI:**
-
 ```bash
 twilio phone_number <your-twilio-number> \
     --voice-url=https://<your-functions-domain>.twil.io/channels/voice/incoming-call
 ```
 
-OR If Using Voice Intel.
-
-```bash
-twilio phone_number <your-twilio-number> \
-    --voice-url=https://<your-functions-domain>.twil.io/channels/voice/incoming-call-voice-intel
-```
-
 **Via Twilio Console:**
-
 1. Open your voice-capable phone number
-2. Set the "When a call comes in" function to: `https://<your-functions-domain>.twil.io/channels/voice/incoming-call` or `https://<your-functions-domain>.twil.io/channels/voice/incoming-call-voice-intel`
+2. Set the "When a call comes in" function to: `https://<your-functions-domain>.twil.io/channels/voice/incoming-call`
 
-### Messaging Channels
-
-#### SMS
+### SMS Channel
 
 **Via Twilio CLI:**
-
 ```bash
 twilio phone_number <your-twilio-number> \
     --sms-url=https://<your-functions-domain>.twil.io/channels/messaging/incoming
 ```
 
-**Via Twilio Console:**
+**Via Console:**
+1. Open your SMS-capable number
+2. Set "When a message comes in" to: `https://<your-functions-domain>.twil.io/channels/messaging/incoming`
 
-1. Open your SMS-capable phone number or Messaging Service
-2. Set the "When a message comes in" webhook to: `https://<your-functions-domain>.twil.io/channels/messaging/incoming`
+### WhatsApp Channel
 
-#### WhatsApp
+1. Go to WhatsApp Sandbox Settings
+2. Set "When a message comes in" to: `https://<your-functions-domain>.twil.io/channels/messaging/incoming`
 
-1. Go to your WhatsApp Sandbox Settings in the Twilio Console
-2. Configure the "When a message comes in" function to: `https://<your-functions-domain>.twil.io/channels/messaging/incoming`
-
-**Note:** To use the same webhook for multiple assistants, add the AssistantSid as a parameter:
-
+**Note:** Add AssistantSid as parameter for multiple assistants:
 ```
 https://<your-functions-domain>.twil.io/channels/messaging/incoming?AssistantSid=AI1234561231237812312
 ```
 
 ### Conversations Channel
 
-Set up Twilio Conversations integration:
-
-1. Create a Conversations Service or use your default service
-2. Run this Twilio CLI command to configure the webhook:
-
+1. Create/use a Conversations Service
+2. Configure webhook:
 ```bash
 twilio api:conversations:v1:services:configuration:webhooks:update \
     --post-webhook-url=https://<your-functions-domain>.twil.io/channels/conversations/messageAdded \
@@ -127,55 +209,43 @@ twilio api:conversations:v1:services:configuration:webhooks:update \
     --filter=onMessageAdded
 ```
 
-3. Follow the [Twilio Conversations documentation](https://www.twilio.com/docs/conversations/overview) to connect your preferred channels
+## Development
 
-## Tool Functions
+### Local Testing
+1. Start ngrok: `ngrok http 3000`
+2. Update webhook URLs with ngrok URL
+3. Use test credentials in `.env`
 
-The assistants use several tool functions that need to be implemented:
-
-1. Customer Lookup (`/tools/customer-lookup`)
-
-   - GET request
-   - Looks up customer information
-   - Returns customer details
-
-2. Get Listings (`/tools/get-listings`)
-
-   - GET request
-   - Retrieves listing information
-   - Input schema:
-     ```typescript
-     {
-        city?: string,
-        zip_code?: string,
-        state?: string,
-        price?: number
-     }
-     ```
-
-3. Outbound Email Grader (`/backend/log-sessions`)
-
-   - POST request
-   - Updates the outbound email log with the assistant's response and manager score.
-   - If the manager score is below a certain threshold, the email is flagged for review.
-   - Input schema:
-     ```typescript
-     {
-        outbound_email_body: string,
-        manager_score: number,
-        outbound_email_status: string,
-        recommended_email_body: string
-     }
-     ```
-
-## Database Tables
-The project interacts with several database tables to manage leads, email logs, and assistant interactions. Ensure your database is correctly configured according to the environment variables set in `.env`.
+### Adding New Functions
+1. Create function in `functions/`
+3. Redeploy: `npm run redeploy`
 
 ## Troubleshooting
-- Check Twilio Debugger for logs: [Twilio Debugger](https://console.twilio.com/us1/monitor/logs/debugger/errors)
-- Ensure all API keys are correctly set in the `.env` file.
-- Use `ngrok` to expose local services if needed.
+
+Common issues and solutions:
+
+1. **Webhook Issues**
+   - Ensure ngrok is running and URL is updated in SendGrid
+   - Check Twilio Functions logs for webhook errors
+   - Verify all environment variables are set correctly
+
+2. **AI Assistant Configuration**
+   - Confirm AI Assistant Terms acceptance
+   - Check tool configurations in Assistant settings
+   - Verify knowledge base attachments
+
+3. **Database Connectivity**
+   - Validate Airtable API key permissions
+   - Ensure Base ID is correct
+   - Check table names and field mappings
+
+## Resource Links
+
+- [Twilio AI Assistants Documentation](https://www.twilio.com/docs/ai)
+- [SendGrid API Documentation](https://docs.sendgrid.com/api-reference)
+- [Airtable API Documentation](https://airtable.com/developers/web/api/introduction)
+- [Channel Configuration Guides](https://www.twilio.com/docs/channels)
 
 ## License
-This project is licensed under the MIT License.
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
