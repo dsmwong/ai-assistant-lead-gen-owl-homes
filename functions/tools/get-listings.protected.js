@@ -78,7 +78,8 @@ exports.handler = async function(context, event, callback) {
                             beds: record.get('beds'),
                             baths: record.get('bath'),
                             square_feet: record.get('square_feet'),
-                            listing_link: record.get('listing_link')
+                            listing_link: record.get('listing_link'),
+                            next_open_house: record.get('next_open_house')
                         });
                     });
                     fetchNextPage();
