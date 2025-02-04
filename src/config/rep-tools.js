@@ -15,7 +15,7 @@ module.exports = (domain) => ({
   getListings: {
     name: 'Get Listings',
     description:
-      'Use this tool to search for listings on behalf of users. Ensure you include these listings as recommendations or to answer questions on behalf of the end user. \n You are only required to fill out one of the below fields. Do not make any information up or you will be fired.',
+      'Use this tool to search for listings on behalf of users. Ensure you include these listings as recommendations or to answer questions on behalf of the end user. You can also use this to find the next open house for each listing. \n You are only required to fill out one of the below fields. Do not make any information up or you will be fired.',
     type: 'WEBHOOK',
     method: 'GET',
     url: `https://${domain}/tools/get-listings`,
