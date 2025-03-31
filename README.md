@@ -94,7 +94,7 @@ cp .env.example .env
 ### 2. Configure Services
 
 #### Airtable Setup
-1. Copy the Airtable base using [this template](link-to-airtable-template)
+1. Copy the Airtable base using [this template](https://airtable.com/invite/l?inviteId=invEFFf3MryA4cHOL&inviteToken=fe9656b11f9a7a3d17bd20a34d18ccc658cc3b5e0fa88d1bcf3eb100f1f3dc65&utm_medium=email&utm_source=product_team&utm_content=transactional-alerts)
 2. Find your Base ID in the Airtable URL (appXXXXXXXXXXXXX)
 3. Generate an access token:
    - Go to your Airtable account settings

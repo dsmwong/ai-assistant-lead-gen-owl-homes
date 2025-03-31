@@ -1,0 +1,84 @@
+﻿session_id,assistant_id,identity,subject,last_message,outbound_email_body,recommended_email_body,manager_score,outbound_email_status,updated_at,created_at
+webhook:3ae9dea2-0468-4500-9bec-561b398c5c7b,aia_asst_01948ecb-7666-738d-ad0c-0cc6217b663b,email:nmogil@twilio.com,"Exciting New Homes, Just for You","Thank you for confirming your interest, Noah!
+
+I'll arrange for one of our Owl Home Agents to reach out to you shortly to discuss your preferences and schedule a convenient time for a meeting. If you have any specific questions or additional requirements, please feel free to let me know, and I'll ensure our agent is well-prepared to assist you.
+
+Looking forward to helping you find the perfect home!
+
+Best regards,","Thank you for confirming your interest, Noah!
+
+I'll arrange for one of our Owl Home Agents to reach out to you shortly to discuss your preferences and schedule a convenient time for a meeting. If you have any specific questions or additional requirements, please feel free to let me know, and I'll ensure our agent is well-prepared to assist you.
+
+Looking forward to helping you find the perfect home!
+
+Best regards,","Thank you for confirming your interest, Noah!
+
+I'll arrange for one of our Owl Home Agents to reach out to you shortly to discuss your preferences and schedule a convenient time for a meeting. If you have any specific questions or additional requirements, please feel free to let me know, and I'll ensure our agent is well-prepared to assist you.
+
+Looking forward to helping you find the perfect home!
+
+Best regards,",0.90,Sent,2025-01-27 11:15,2025-01-27 11:13
+webhook:e6869e08-b574-4872-969c-a63dbda46408,aia_asst_01948ecb-7666-738d-ad0c-0cc6217b663b,email:noah.mogil97@gmail.com,"Exciting New Homes, Just for You","Hello Noah,
+
+Thank you for reaching out to Owl Homes! I'm excited to share some property recommendations that match your interest in a big house in the 98040 area. Here are a couple of stunning options for you to consider:
+
+1. **Stunning Mercer Island Retreat**
+   - **Address:** 7535 86th Ave SE, Seattle, WA 98040
+   - **Price:** $850,000
+   - **Size:** 2,500 sq. ft.
+   - **Details:** This beautifully designed 3-bedroom, 5-bathroom home features a modern open-concept layout, vaulted ceilings, and floor-to-ceiling windows. The gourmet kitchen is equipped with high-end appliances and quartz countertops. Each bedroom includes an en-suite bath, with a luxurious primary suite offering a spa-like retreat. Enjoy a private backyard oasis with a spacious deck, perfect for entertaining. [View Listing](https://owlhomes.example/1)
+
+2. **Contemporary Masterpiece with Puget Sound Views**
+   - **Address:** 1670 Queen Anne Ave, Seattle, WA 98040
+   - **Price:** $2,336,526
+   - **Size:** 3,105 sq. ft.
+   - **Details:** This home boasts floor-to-ceiling windows, a floating staircase, and a chef's kitchen with a waterfall island. It includes smart home features, a separate media room, and a home gym with a spa bathroom. [View Listing](https://owlhomes.example/12)
+
+Would you like to schedule a time to speak with one of our Owl Home Agents to explore these options further or to discuss any other preferences you might have? We’re here to help you find your perfect home!
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]","Hello Noah,
+
+Thank you for reaching out to Owl Homes! I'm excited to share some property recommendations that match your interest in a big house in the 98040 area. Here are a couple of stunning options for you to consider:
+
+1. **Stunning Mercer Island Retreat**
+   - **Address:** 7535 86th Ave SE, Seattle, WA 98040
+   - **Price:** $850,000
+   - **Size:** 2,500 sq. ft.
+   - **Details:** This beautifully designed 3-bedroom, 5-bathroom home features a modern open-concept layout, vaulted ceilings, and floor-to-ceiling windows. The gourmet kitchen is equipped with high-end appliances and quartz countertops. Each bedroom includes an en-suite bath, with a luxurious primary suite offering a spa-like retreat. Enjoy a private backyard oasis with a spacious deck, perfect for entertaining. [View Listing](https://owlhomes.example/1)
+
+2. **Contemporary Masterpiece with Puget Sound Views**
+   - **Address:** 1670 Queen Anne Ave, Seattle, WA 98040
+   - **Price:** $2,336,526
+   - **Size:** 3,105 sq. ft.
+   - **Details:** This home boasts floor-to-ceiling windows, a floating staircase, and a chef's kitchen with a waterfall island. It includes smart home features, a separate media room, and a home gym with a spa bathroom. [View Listing](https://owlhomes.example/12)
+
+Would you like to schedule a time to speak with one of our Owl Home Agents to explore these options further or to discuss any other preferences you might have? We’re here to help you find your perfect home!
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]","Hello Noah,
+
+Thank you for reaching out to Owl Homes! I'm thrilled to share some property recommendations that align with your interest in a spacious home in the 98040 area. Here are two exceptional options for your consideration:
+
+1. **Stunning Mercer Island Retreat**
+   - **Address:** 7535 86th Ave SE, Seattle, WA 98040
+   - **Price:** $850,000
+   - **Size:** 2,500 sq. ft.
+   - **Details:** This beautifully designed 3-bedroom, 5-bathroom home features a modern open-concept layout, vaulted ceilings, and floor-to-ceiling windows. The gourmet kitchen is equipped with high-end appliances and quartz countertops. Each bedroom includes an en-suite bath, with a luxurious primary suite offering a spa-like retreat. Enjoy a private backyard oasis with a spacious deck, perfect for entertaining. [View Listing](https://owlhomes.example/1)
+
+2. **Contemporary Masterpiece with Puget Sound Views**
+   - **Address:** 1670 Queen Anne Ave, Seattle, WA 98040
+   - **Price:** $2,336,526
+   - **Size:** 3,105 sq. ft.
+   - **Details:** This home boasts floor-to-ceiling windows, a floating staircase, and a chef's kitchen with a waterfall island. It includes smart home features, a separate media room, and a home gym with a spa bathroom. [View Listing](https://owlhomes.example/12)
+
+Would you like to schedule a time to speak with one of our Owl Home Agents to explore these options further or to discuss any other preferences you might have? We’re here to help you find your perfect home!
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]",0.90,Sent,2025-01-31 06:52,2025-01-31 06:52
