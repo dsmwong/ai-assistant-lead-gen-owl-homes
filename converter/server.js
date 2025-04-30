@@ -7,8 +7,12 @@ const axios = require('axios');
 // Routing Configuration
 const routes = [
   { recipient: 'sclead@aiaparse.indiveloper.com', url: '/backend/extract-lead' },
-  { recipient: 'owlhome@aiaparse.indiveloper.com', url: '/backend/log-inbound-email' }
+  { recipient: 'owlhome@aiaparse.indiveloper.com', url: '/backend/log-inbound-email' },
+  { recipient: 'sclead@rndrparse.indiveloper.com', url: '/backend/extract-lead' },
+  { recipient: 'sclead@flyparse.indiveloper.com', url: '/backend/extract-lead' }
 ];
+
+console.log('Routes:', routes);
 
 // Setting Environment variables
 const FORWARD_TO_BASE = `https://${process.env.FUNCTIONS_DOMAIN}`;
@@ -34,6 +38,14 @@ fastify.addHook('preHandler', async (request, reply) => {
   console.log('URL:', request.url);
   console.log('Headers:', request.headers);
   console.log('Body:', request.body);
+
+  // Special Command to list routes
+  if( request.url === '/list-routes' ) {
+    console.log('Routes:', routes);
+    return reply
+      .code(200)
+      .send({ routes });
+  }  
 
   // only support Sendgrid User-Agent 'Sendlib/1.0'
   if (request.headers['user-agent'] !== 'Sendlib/1.0') {
