@@ -7,7 +7,9 @@ const axios = require('axios');
 // Routing Configuration
 const routes = [
   { recipient: 'sclead@aiaparse.indiveloper.com', url: '/backend/extract-lead' },
-  { recipient: 'owlhome@aiaparse.indiveloper.com', url: '/backend/log-inbound-email' }
+  { recipient: 'owlhome@aiaparse.indiveloper.com', url: '/backend/log-inbound-email' },
+  { recipient: 'sclead@rndrparse.indiveloper.com', url: '/backend/extract-lead' },
+  { recipient: 'sclead@flyparse.indiveloper.com', url: '/backend/extract-lead' }
 ];
 
 // Setting Environment variables
