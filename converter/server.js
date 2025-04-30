@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fastify = require('fastify')();
 const multipart = require('@fastify/multipart');
 const axios = require('axios');
+const { base } = require('airtable');
 
 // Routing Configuration
 const routes = [
@@ -44,7 +45,7 @@ fastify.addHook('preHandler', async (request, reply) => {
     console.log('Routes:', routes);
     return reply
       .code(200)
-      .send({ routes });
+      .send({ routes, baseUrl: FORWARD_TO_BASE });
   }  
 
   // only support Sendgrid User-Agent 'Sendlib/1.0'
