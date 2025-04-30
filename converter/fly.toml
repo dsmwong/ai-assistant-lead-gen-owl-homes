@@ -4,7 +4,7 @@
 #
 
 app = 'ai-assistant-lead-gen-owl-homes'
-primary_region = 'iad'
+primary_region = 'syd'
 
 [build]
 
