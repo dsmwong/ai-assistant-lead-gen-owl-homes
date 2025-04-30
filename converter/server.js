@@ -39,6 +39,14 @@ fastify.addHook('preHandler', async (request, reply) => {
   console.log('Headers:', request.headers);
   console.log('Body:', request.body);
 
+  // Special Command to list routes
+  if( request.url === '/list-routes' ) {
+    console.log('Routes:', routes);
+    return reply
+      .code(200)
+      .send({ routes });
+  }  
+
   // only support Sendgrid User-Agent 'Sendlib/1.0'
   if (request.headers['user-agent'] !== 'Sendlib/1.0') {
     console.log('User-Agent:', request.headers['user-agent'], 'not supported');
