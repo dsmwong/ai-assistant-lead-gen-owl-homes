@@ -12,6 +12,8 @@ const routes = [
   { recipient: 'sclead@flyparse.indiveloper.com', url: '/backend/extract-lead' }
 ];
 
+console.log('Routes:', routes);
+
 // Setting Environment variables
 const FORWARD_TO_BASE = `https://${process.env.FUNCTIONS_DOMAIN}`;
 const PORT = process.env.PORT || 3010;
