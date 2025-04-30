@@ -3,7 +3,6 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fastify = require('fastify')();
 const multipart = require('@fastify/multipart');
 const axios = require('axios');
-const { base } = require('airtable');
 
 // Routing Configuration
 const routes = [
