@@ -4,8 +4,22 @@ const FUNCTION_NAME = 'process-lead';
 
 exports.handler = async function(context, event, callback) {
   const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
+  const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
 
   console.log(`Entered ${context.PATH} node version ${process.version} twilio version ${twilio_version}`);
+
+  const db = ProviderFactory.getDatabase(context); 
+  
+  // Initialize Twilio client
+  let client;
+  if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" ) {
+    client = require('twilio')(
+      context.TWILIO_ACCOUNT_SID,
+      context.TWILIO_AUTH_TOKEN
+    );
+  } else {
+    client = context.getTwilioClient();
+  }
 
   try {
     console.log(`[${FUNCTION_NAME}] Event:`, event);
@@ -13,7 +27,7 @@ exports.handler = async function(context, event, callback) {
     // remove json markup from event body
     const cleanBody = event.Body.replace(/```json/g, '').replace(/```/g, '');
     console.log(`[${FUNCTION_NAME}] cleanBody:`, cleanBody);
- 
+
     const sessionData = {
       session_id: event.SessionId,
       assistant_id: event.AssistantSid,
@@ -24,6 +38,43 @@ exports.handler = async function(context, event, callback) {
       updated_at: new Date().toISOString()
     };
     console.log(`[${FUNCTION_NAME}] Session Data:`, sessionData);
+
+    // Create lead using database provider
+    const leadId = await db.createSCLead({
+      first_name: sessionData.lead.FirstName,
+      last_name: sessionData.lead.LastName,
+      email: sessionData.lead.Email,
+      phone: sessionData.lead.PhoneNumber.replace(/\s/g, ''),
+      summary: sessionData.lead.Intent,
+      original_body: sessionData.lead.Body,
+      company: sessionData.lead.Company,
+      status: 'New',
+    });
+    console.log(`[${FUNCTION_NAME}] SC Lead created successfully:`, leadId);
+
+    // Call the AI Assistant to process the lead
+    const identity = `email:${sessionData.lead.Email}`;
+    const messageConfig = {
+      identity: identity,
+      // "session_id": event.sessionId,  // no exiting session
+      body: ( sessionData.lead.Body || 'Empty message') + `\n\nRegards ${sessionData.lead.FirstName} ${sessionData.lead.LastName}`,
+      webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/process-ai-response`,
+      mode: 'email',
+    };
+
+    console.log(`[${FUNCTION_NAME}] Message Config with ${context.SC_REP_ASSISTANT_ID}`, JSON.stringify(messageConfig, null, 2));
+
+    // Call AI Assistant to extract lead information
+    const message = await client.assistants.v1
+      .assistants(context.SC_REP_ASSISTANT_ID)
+      .messages.create(messageConfig);
+
+    console.log(`[${FUNCTION_NAME}] Assistant response:`,   JSON.stringify(message, null, 2)
+    );
+
+    const updatedLead = await db.updateSCLead(leadId, {
+      'aia_conversation_session': message.sessionId,
+    });
 
     return callback(null, createResponse(200, success(sessionData)));
   }  catch (err) {

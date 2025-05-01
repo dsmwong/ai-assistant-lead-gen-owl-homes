@@ -154,6 +154,74 @@ class AirtableProvider {
       throw new Error(`Failed to fetch inbound emails: ${error.message}`);
     }
   }
+
+  ///////////////////////////////////////////////////////////////////////
+  /// SC DEMO
+  ///////////////////////////////////////////////////////////////////////
+
+  // Specificly for SC Leads
+  async createSCLead(data) {
+    try {
+      const records = await this.base('SC Leads').create([{
+        fields: {
+          'first_name': data.first_name,
+          'last_name': data.last_name,
+          'email': data.email,
+          'phone': data.phone,
+          'summary': data.summary,
+          'original_body': data.original_body,
+          'company': data.company,
+          'status': data.status || 'New',
+          'created_at': new Date().toISOString()
+        }
+      }]);
+      return records[0].id;
+    } catch (error) {
+      console.error('Error creating lead:', error);
+      throw new Error(`Failed to create lead: ${error.message}`);
+    }
+  }
+
+  async updateSCLead(id, data) {
+    try {
+      const records = await this.base('SC Leads').update([{
+        id,
+        fields: {
+          ...data,
+          'updated_at': new Date().toISOString()
+        }
+      }]);
+      return records[0];
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      throw new Error(`Failed to update lead: ${error.message}`);
+    }
+  }
+
+  async getSCLead(id) {
+    try {
+      const record = await this.base('SC Leads').find(id);
+      return record;
+    } catch (error) {
+      console.error('Error fetching lead:', error);
+      throw new Error(`Failed to fetch lead: ${error.message}`);
+    }
+  }
+
+  async getSCLeadByEmail(email) {
+    try {
+      const records = await this.base('SC Leads')
+        .select({
+          filterByFormula: `{email} = '${email}'`,
+          maxRecords: 1
+        })
+        .firstPage();
+      return records.length > 0 ? records[0] : null;
+    } catch (error) {
+      console.error('Error fetching lead by email:', error);
+      throw new Error(`Failed to fetch lead by email: ${error.message}`);
+    }
+  }
 }
 
 module.exports = AirtableProvider;
