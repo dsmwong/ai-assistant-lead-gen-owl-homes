@@ -1,12 +1,11 @@
 const twilio_version = require('twilio/package.json').version;
 
-const FUNCTION_NAME = 'process-lead';
-
 exports.handler = async function(context, event, callback) {
   const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
   const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
 
   console.log(`Entered ${context.PATH} node version ${process.version} twilio version ${twilio_version}`);
+  const FUNCTION_NAME = context.PATH.split('/').pop();
 
   const db = ProviderFactory.getDatabase(context); 
   const emailProvider = ProviderFactory.getEmailProvider(context);
@@ -40,8 +39,19 @@ exports.handler = async function(context, event, callback) {
     };
     console.log(`[${FUNCTION_NAME}] Session Data:`, sessionData);
 
+    const sclead = await db.getSCLeadByConversationSession(sessionData.session_id);
+    if (!sclead) {
+      throw new Error('SC Lead not found for this session');
+    }
+
+    const inboundEmails = await db.getInboundEmailsByMessageId(sclead.get('last_message_id'));
+    if (!inboundEmails) {
+      throw new Error('Inbound email not found for this session');
+    }
+    console.log(`[${FUNCTION_NAME}] Inbound Email:`, inboundEmails[0]);
+
     // Send the email
-    const emailSend = await emailProvider.send(event.Identity, cleanBody, `Response from your email.`, {});
+    const emailSend = await emailProvider.send(event.Identity, cleanBody, 'Re: ' + inboundEmails[0].get('subject'), {lastMessageId: sclead.get('last_message_id')});
     console.log(`[${FUNCTION_NAME}] Email sent successfully:`, emailSend);
 
     // Create lead using database provider

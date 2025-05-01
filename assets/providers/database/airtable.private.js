@@ -127,7 +127,9 @@ class AirtableProvider {
         fields: {
           'message_id': data.message_id,
           'session_id': data.session_id,
+          'subject': data.subject || 'No Subject',
           'message': data.message,
+          'original_msg_ref': data.original_msg_ref,
           'identity': data.identity,
           'created_at': new Date().toISOString()
         }
@@ -155,6 +157,55 @@ class AirtableProvider {
     }
   }
 
+  async getInboundEmailsBySessionId(session_id, limit = 1) {
+    try {
+      const records = await this.base('Inbound Emails')
+        .select({
+          filterByFormula: `{session_id} = '${session_id}'`,
+          maxRecords: limit,
+          sort: [{ field: 'created_at', direction: 'desc' }]
+        })
+        .firstPage();
+      return records;
+    } catch (error) {
+      console.error('Error fetching inbound emails:', error);
+      throw new Error(`Failed to fetch inbound emails: ${error.message}`);
+    }
+  }
+
+  async getInboundEmailsByMessageId(message_id, limit = 1) {
+    try {
+      const records = await this.base('Inbound Emails')
+        .select({
+          filterByFormula: `{message_id} = '${message_id}'`,
+          maxRecords: limit,
+          sort: [{ field: 'created_at', direction: 'desc' }]
+        })
+        .firstPage();
+      return records;
+    } catch (error) {
+      console.error('Error fetching inbound emails:', error);
+      throw new Error(`Failed to fetch inbound emails: ${error.message}`);
+    }
+  }
+
+
+  async updateInboundEmails(id, data) {
+    try {
+      const records = await this.base('Inbound Emails').update([{
+        id,
+        fields: {
+          ...data,
+          'updated_at': new Date().toISOString()
+        }
+      }]);
+      return records[0];
+    } catch (error) {
+      console.error('Error updating inbound emails:', error);
+      throw new Error(`Failed to update inbound emails: ${error.message}`);
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////
   /// SC DEMO
   ///////////////////////////////////////////////////////////////////////
@@ -171,6 +222,7 @@ class AirtableProvider {
           'summary': data.summary,
           'original_body': data.original_body,
           'company': data.company,
+          'last_message_id': data.last_message_id,
           'status': data.status || 'New',
           'created_at': new Date().toISOString()
         }
@@ -213,6 +265,36 @@ class AirtableProvider {
       const records = await this.base('SC Leads')
         .select({
           filterByFormula: `{email} = '${email}'`,
+          maxRecords: 1
+        })
+        .firstPage();
+      return records.length > 0 ? records[0] : null;
+    } catch (error) {
+      console.error('Error fetching lead by email:', error);
+      throw new Error(`Failed to fetch lead by email: ${error.message}`);
+    }
+  }
+
+  async getSCLeadByConversationSession(session_id) {
+    try {
+      const records = await this.base('SC Leads')
+        .select({
+          filterByFormula: `{aia_conversation_session} = '${session_id}'`,
+          maxRecords: 1
+        })
+        .firstPage();
+      return records.length > 0 ? records[0] : null;
+    } catch (error) {
+      console.error('Error fetching lead by email:', error);
+      throw new Error(`Failed to fetch lead by email: ${error.message}`);
+    }
+  }
+
+  async getSCLeadByLastMessageId(last_message_id) {
+    try {
+      const records = await this.base('SC Leads')
+        .select({
+          filterByFormula: `{last_message_id} = '${last_message_id}'`,
           maxRecords: 1
         })
         .firstPage();

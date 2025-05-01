@@ -1,12 +1,17 @@
-const FUNCTION_NAME = 'extract-contacts';
+const { parse } = require('path');
+
+const twilio_version = require('twilio/package.json').version;
 
 exports.handler = async function(context, event, callback) {
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
     const { parseEmailReply } = require(Runtime.getAssets()['/utils/email.js'].path);
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
+
+    console.log(`Entered ${context.PATH} node version ${process.version} twilio version ${twilio_version}`);
+    const FUNCTION_NAME = context.PATH.split('/').pop();
     
     // Initialize providers
-    // const db = ProviderFactory.getDatabase(context);
+    const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);
     console.log('[log-inbound-email] Event body:', event.body);
     console.log(`[log-inbound-email] Event raw body: ${JSON.stringify(event)}`);
@@ -41,9 +46,25 @@ exports.handler = async function(context, event, callback) {
 
         // Parse inbound email using email provider
         const parsedEmail = emailProvider.parseInbound(event);
+
+        console.log(`[${FUNCTION_NAME}] Parsed Email:`, parsedEmail);
         
         if (!parsedEmail.messageId) {
             throw new Error('Message-ID not found in email headers');
+        }
+
+        const identity = `email:${parsedEmail.fromEmail}`;
+
+        let sessionId, references;
+        if( parsedEmail.threadData && parsedEmail.threadData.references ) {
+            references = parsedEmail.threadData.references
+            console.log(`[${FUNCTION_NAME}] References:`, references);
+            const lastInboundEmail = await db.getInboundEmailsByMessageId(references);
+            if (!lastInboundEmail) {
+                throw new Error('Inbound email not found for this session');
+            }
+            console.log(`[${FUNCTION_NAME}] Last Inbound Email:`, lastInboundEmail[0]);
+            sessionId = lastInboundEmail[0].get('session_id');
         }
 
         // Parse and clean the email reply
@@ -52,12 +73,21 @@ exports.handler = async function(context, event, callback) {
             html: parsedEmail.html
         });
 
-        const identity = `email:${parsedEmail.fromEmail}`;
+        // Log the inbound email using database provider
+        const emailRecord = await db.logInboundEmail({
+            message_id: parsedEmail.messageId,
+            message: mostRecentReply || 'Empty message',
+            original_msg_ref: references,
+            subject: parsedEmail.subject,
+            identity: identity
+        });
+
+        console.log(`[${FUNCTION_NAME}] Email Record:`, emailRecord);
 
         // Pack the message for the lead extraction assistant
         const messageConfig = {
             identity: identity,
-            // "session_id": event.sessionId,
+            "session_id": sessionId ? sessionId.replace('webhook:', '') : sessionId,
             body: mostRecentReply || 'Empty message',
             webhook: `https://${context.FUNCTIONS_DOMAIN}/backend/parse-lead`,
             mode: "email"
@@ -72,6 +102,12 @@ exports.handler = async function(context, event, callback) {
             .create(messageConfig);
 
         console.log(`[${FUNCTION_NAME}] Assistant response:`, JSON.stringify(message, null, 2));
+
+        
+        const updateInboundEmails = await db.updateInboundEmails(emailRecord.id, {
+            // if sessionId starts with 'webhook:', remove it   
+            session_id: `webhook:${message.sessionId}`,
+        });
 
         return callback(null, createResponse(200, success({
             message_status: message.status,

@@ -42,6 +42,8 @@ class SendGridProvider {
         };
       }
 
+      console.log('Sending email:', msg);
+
       const response = await sgMail.send(msg);
       return {
         success: true,
