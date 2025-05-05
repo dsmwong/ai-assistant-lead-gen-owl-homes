@@ -348,7 +348,7 @@
                   <span class="paste-chat-log-timestamp">${formatDate(message.timestamp)}</span>
                 </div>
                 <div class="paste-chat-log-message">
-                  ${message.content}
+                  ${message.author.role !== 'tool' ? message.content.content : JSON.stringify(message.content, null, 2)}
                 </div>
               </div>
             </div>
