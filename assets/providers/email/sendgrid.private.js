@@ -62,7 +62,16 @@ class SendGridProvider {
       const messageId = payload.headers.match(/Message-ID:\s*<([^>]+)>/i)?.[1];
       
       // Extract email address from the 'from' field
-      const fromEmail = payload.from.match(/<([^>]+)>/)?.[1] || payload.from;
+      const fromLine = payload.headers.match(/From:\s*([^<]+)<([^>]+)>/i);
+      let fromName, fromEmail;
+      if( fromLine ) {
+        fromName = fromLine[1].trim();
+        fromEmail = fromLine[2].trim();
+      } else {
+        fromName = payload.from.match(/([^<]+)<([^>]+)>/)?.[1]?.trim() || '';
+        fromEmail = payload.from.match(/<([^>]+)>/)?.[1] || payload.from; 
+      }
+      // const fromEmail = payload.from.match(/<([^>]+)>/)?.[1] || payload.from;
       
       // Extract thread references if they exist
       const references = payload.headers.match(/References:\s*<([^>]+)>/i)?.[1];
@@ -73,6 +82,7 @@ class SendGridProvider {
 
       return {
         messageId,
+        fromName,
         fromEmail,
         text: payload.text,
         html: payload.html,

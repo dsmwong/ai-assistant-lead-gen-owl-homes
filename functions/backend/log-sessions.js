@@ -10,7 +10,16 @@ exports.handler = async function(context, event, callback) {
     });
 
     try {
-        const client = context.getTwilioClient();
+        let client;
+        if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" ) {
+          client = require('twilio')(
+            context.TWILIO_ACCOUNT_SID,
+            context.TWILIO_AUTH_TOKEN
+          );
+        } else {
+          client = context.getTwilioClient();
+        }
+
         const db = ProviderFactory.getDatabase(context);
 
         if (!event.SessionId || !event.Identity || !event.Body) {

@@ -4,7 +4,17 @@ exports.handler = async function(context, event, callback) {
     const ProviderFactory = require(Runtime.getAssets()['/providers/factory.js'].path);
 
     try {
-        const client = context.getTwilioClient();
+
+        let client;
+        if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" ) {
+            client = require('twilio')(
+            context.TWILIO_ACCOUNT_SID,
+            context.TWILIO_AUTH_TOKEN
+            );
+        } else {
+            client = context.getTwilioClient();
+        }
+                
         const db = ProviderFactory.getDatabase(context);
 
         if (!event.email) {
@@ -35,7 +45,7 @@ exports.handler = async function(context, event, callback) {
                 mode: "email"
             };
         } else if (event.first_name && event.area_code) {
-            const messageBody = `A new lead, named ${event.first_name}, was submitted and they are interested in properties in ${event.area_code}. ${event.interest ? `They provided the following additional information: "${event.interest}".` : ''} Write an email to them with some property recommendations based on their interests and ask if they would like to schedule time with an Owl Home Agent.`;
+            const messageBody = `A new lead, named ${event.first_name}, was submitted and they are interested in properties in ${event.area_code}. ${event.interest ? `They provided the following additional information: "${event.interest}".` : ''} Write an email to them with some property recommendations based on their interests and ask if they would like to schedule time with an Owl Home Agent. Format the email in HTML.`;
             
             messageConfig = {
                 identity: identity,

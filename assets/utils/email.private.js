@@ -16,7 +16,7 @@ exports.parseEmailReply = ({ text, html }) => {
     
     return content
       // Remove email signatures (split on first '--' and take first part)
-      .split(/^--\s*$/m)[0]
+      // .split(/^--\s*$/m)[0]
       // Remove quoted replies (lines starting with >)
       .replace(/^>.*$/gm, '')
       // Remove common reply headers

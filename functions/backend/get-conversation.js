@@ -16,8 +16,18 @@ exports.handler = async function(context, event, callback) {
     }
 
     // Initialize Twilio client
-    const client = context.getTwilioClient();
+    let client;
+    if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" ) {
+      client = require('twilio')(
+        context.TWILIO_ACCOUNT_SID,
+        context.TWILIO_AUTH_TOKEN
+      );
+    } else {
+      client = context.getTwilioClient();
+    }
 
+    console.log('Fetching messages for session:', sessionId);
+    console.log('Encode for session:', encodeURIComponent(sessionId));
     // Fetch messages for the session
     const messages = await client.assistants.v1
       .sessions(sessionId)
@@ -28,7 +38,7 @@ exports.handler = async function(context, event, callback) {
     const formattedMessages = messages.map(message => ({
       id: message.id,
       content: message.content,
-      timestamp: message.date_created,
+      timestamp: message.dateCreated,
       author: {
         role: message.role,
         identity: message.identity
