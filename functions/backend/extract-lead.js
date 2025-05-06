@@ -13,15 +13,16 @@ exports.handler = async function(context, event, callback) {
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
     const emailProvider = ProviderFactory.getEmailProvider(context);
-    console.log('[log-inbound-email] Event body:', event.body);
-    console.log(`[log-inbound-email] Event raw body: ${JSON.stringify(event)}`);
+    console.log(`[${FUNCTION_NAME}] Event body:`, event.body);
+    console.log(`[${FUNCTION_NAME}] Event raw body: ${JSON.stringify(event)}`);
 
     try {
 
         console.log(`[${FUNCTION_NAME}] Event:`, event);
+        console.log(`[${FUNCTION_NAME}] Context:`, context);
         
         let client;
-        if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" ) {
+        if( context.FUNCTIONS_DOMAIN === "dawong.au.ngrok.io" || context.FUNCTIONS_DOMAIN === "localhost:3000" || context.DOMAIN_NAME === "localhost:3000" || context.DOMAIN_NAME === "dawong.au.ngrok.io" ) {
             client = require('twilio')(
               context.TWILIO_ACCOUNT_SID,
               context.TWILIO_AUTH_TOKEN
