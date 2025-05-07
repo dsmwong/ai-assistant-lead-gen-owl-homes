@@ -1,4 +1,5 @@
 const twilio_version = require('twilio/package.json').version;
+const { Analytics } = require('@segment/analytics-node');
 
 exports.handler = async function(context, event, callback) {
   const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
@@ -6,6 +7,12 @@ exports.handler = async function(context, event, callback) {
 
   console.log(`Entered ${context.PATH} node version ${process.version} twilio version ${twilio_version}`);
   const FUNCTION_NAME = context.PATH.split('/').pop();
+
+  // Initialize Segment Analytics
+  const analytics = new Analytics({
+      writeKey: context.SEGMENT_WRITE_KEY,
+  });
+  
 
   const db = ProviderFactory.getDatabase(context); 
   const emailProvider = ProviderFactory.getEmailProvider(context);
@@ -50,9 +57,28 @@ exports.handler = async function(context, event, callback) {
     }
     console.log(`[${FUNCTION_NAME}] Inbound Email:`, inboundEmails[0]);
 
+    const subject = 'Re: ' + inboundEmails[0].get('subject');
+
     // Send the email
-    const emailSend = await emailProvider.send(event.Identity, cleanBody, 'Re: ' + inboundEmails[0].get('subject'), {lastMessageId: sclead.get('last_message_id')});
+    const emailSend = await emailProvider.send(event.Identity, cleanBody, subject, {lastMessageId: sclead.get('last_message_id')});
     console.log(`[${FUNCTION_NAME}] Email sent successfully:`, emailSend);
+
+    analytics.track({
+      anonymousId: sclead.get('last_message_id'),
+      event: 'Outbound Email Sent',
+      properties: {
+          ai_session_id: sessionData.session_id,
+          ai_assistant_id: sessionData.assistant_id,
+          to_email: sessionData.identity.replace('email:', ''),
+          original_msg_ref: sclead.get('last_message_id'),
+          subject: subject,
+          response_body: cleanBody,
+          sent_message_id: emailSend.messageId,
+          sent_response: emailSend.response,
+      }
+    });
+
+    await analytics.flush();
 
     // Create lead using database provider
     // const leadId = await db.createSCLead({

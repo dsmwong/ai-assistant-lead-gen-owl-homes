@@ -77,6 +77,9 @@ class SendGridProvider {
       const references = payload.headers.match(/References:\s*<([^>]+)>/i)?.[1];
       const inReplyTo = payload.headers.match(/In-Reply-To:\s*<([^>]+)>/i)?.[1];
 
+      // Extract to email address
+      const toEmail = payload.to;
+
       // Extract subject
       const subject = payload.subject || '';
 
@@ -84,6 +87,7 @@ class SendGridProvider {
         messageId,
         fromName,
         fromEmail,
+        toEmail,
         text: payload.text,
         html: payload.html,
         subject,

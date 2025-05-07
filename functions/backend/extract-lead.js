@@ -1,6 +1,7 @@
 const { parse } = require('path');
 
 const twilio_version = require('twilio/package.json').version;
+const { Analytics } = require('@segment/analytics-node');
 
 exports.handler = async function(context, event, callback) {
     const { createResponse, success, error } = require(Runtime.getAssets()['/utils/response.js'].path);
@@ -9,6 +10,11 @@ exports.handler = async function(context, event, callback) {
 
     console.log(`Entered ${context.PATH} node version ${process.version} twilio version ${twilio_version}`);
     const FUNCTION_NAME = context.PATH.split('/').pop();
+
+    // Initialize Segment Analytics
+    const analytics = new Analytics({
+        writeKey: context.SEGMENT_WRITE_KEY,
+    });
     
     // Initialize providers
     const db = ProviderFactory.getDatabase(context);
@@ -68,6 +74,21 @@ exports.handler = async function(context, event, callback) {
             sessionId = lastInboundEmail[0].get('session_id');
         }
 
+        analytics.track({
+            anonymousId: parsedEmail.threadData?.references || parsedEmail.messageId,
+            event: 'Inbound Email Received',
+            properties: {
+                email: parsedEmail.fromEmail,
+                message_id: parsedEmail.messageId,
+                subject: parsedEmail.subject,
+                from_email: parsedEmail.fromEmail,
+                to_email: parsedEmail.toEmail,
+                text: parsedEmail.text,
+                html: parsedEmail.html,
+                thread_data: parsedEmail.threadData
+            }
+        });
+
         // Parse and clean the email reply
         const mostRecentReply = parseEmailReply({
             text: parsedEmail.text,
@@ -109,6 +130,8 @@ exports.handler = async function(context, event, callback) {
             // if sessionId starts with 'webhook:', remove it   
             session_id: `webhook:${message.sessionId}`,
         });
+
+        await analytics.flush();
 
         return callback(null, createResponse(200, success({
             message_status: message.status,
